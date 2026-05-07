@@ -800,12 +800,10 @@ function BuilderModule() {
   const [current, setCurrent] = useState(null);
   const [wordBank, setWordBank] = useState([]);
   const [assembled, setAssembled] = useState([]);
-  const [result, setResult] = useState(null); // null | "correct" | "wrong"
-  const [wrongIdx, setWrongIdx] = useState([]);
+  const [completed, setCompleted] = useState(false);
   const [score, setScore] = useState(0);
   const [total, setTotal] = useState(0);
   const [listened, setListened] = useState(false);
-  const [shake, setShake] = useState(false);
 
   const filtered = BUILDER_SENTENCES.filter(s => s.cefr === levelFilter);
 
@@ -815,14 +813,38 @@ function BuilderModule() {
     setCurrent(next);
     setWordBank(shuffleArr(next.words.map((w, i) => ({ w, key: i }))));
     setAssembled([]);
-    setResult(null);
-    setWrongIdx([]);
+    setCompleted(false);
     setListened(false);
   };
 
   useEffect(() => {
     if (filtered.length > 0) loadNew(null);
   }, [levelFilter]);
+
+  // Real-time check: compare assembled so far with correct words
+  const getWordStatus = (item, idx) => {
+    if (!current) return "neutral";
+    const correct = current.words[idx];
+    if (!correct) return "wrong";
+    if (item.w.toLowerCase() === correct.toLowerCase()) return "correct";
+    return "wrong";
+  };
+
+  // Check if fully correct
+  useEffect(() => {
+    if (!current || assembled.length === 0) return;
+    if (assembled.length === current.words.length) {
+      const allCorrect = assembled.every((item, i) =>
+        item.w.toLowerCase() === current.words[i]?.toLowerCase()
+      );
+      if (allCorrect) {
+        setCompleted(true);
+        setScore(s => s + 1);
+        setTotal(t => t + 1);
+        speakText(current.words.join(" "), 0.85);
+      }
+    }
+  }, [assembled, current]);
 
   const listen = () => {
     if (!current) return;
@@ -831,46 +853,21 @@ function BuilderModule() {
   };
 
   const addWord = (item) => {
-    if (result) return;
+    if (completed) return;
     setAssembled(prev => [...prev, item]);
     setWordBank(prev => prev.filter(w => w.key !== item.key));
   };
 
   const removeWord = (item) => {
-    if (result) return;
+    if (completed) return;
     setAssembled(prev => prev.filter(w => w.key !== item.key));
     setWordBank(prev => shuffleArr([...prev, item]));
   };
 
-  const check = () => {
-    if (assembled.length === 0 || !current) return;
-    const userWords = assembled.map(w => w.w);
-    const correct = current.words;
-    const wrong = [];
-    let isCorrect = userWords.length === correct.length;
-    userWords.forEach((w, i) => {
-      if (w.toLowerCase() !== correct[i]?.toLowerCase()) {
-        isCorrect = false;
-        wrong.push(i);
-      }
-    });
-    setWrongIdx(wrong);
-    setResult(isCorrect ? "correct" : "wrong");
-    setTotal(t => t + 1);
-    if (isCorrect) {
-      setScore(s => s + 1);
-      speakText(current.words.join(" "), 0.85);
-    } else {
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
-    }
-  };
-
-  const retry = () => {
-    setWordBank(shuffleArr([...assembled.map(w => w), ...wordBank]));
+  const reset = () => {
+    setWordBank(shuffleArr(current.words.map((w, i) => ({ w, key: i }))));
     setAssembled([]);
-    setResult(null);
-    setWrongIdx([]);
+    setCompleted(false);
   };
 
   if (!current) return <div style={{ color: "#555", textAlign: "center", padding: 40 }}>Загрузка...</div>;
@@ -912,7 +909,7 @@ function BuilderModule() {
         </div>
       </div>
 
-      {/* Hint */}
+      {/* Hint + listen */}
       <div style={{ background: "#0d1117", border: "1px solid #ffffff08", borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
         <span style={{ color: "#555", fontSize: 12 }}>🇷🇺 {current.hint}</span>
         <button onClick={listen} style={{
@@ -925,24 +922,32 @@ function BuilderModule() {
         </button>
       </div>
 
-      {/* Assembly area */}
+      {/* Assembly area — real-time color */}
       <div style={{
-        minHeight: 64, background: result === "correct" ? "#0a2a0a" : result === "wrong" ? "#1a0a0a" : "#0a0a1a",
-        border: `1px solid ${result === "correct" ? "#00ff8850" : result === "wrong" ? "#ff444450" : "#ffffff15"}`,
-        borderRadius: 16, padding: "14px 14px", display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center",
-        transition: "all 0.3s", animation: shake ? "shake 0.4s ease" : "none", cursor: assembled.length > 0 && !result ? "default" : "default"
+        minHeight: 64,
+        background: completed ? "#0a2a0a" : "#0a0a1a",
+        border: `1px solid ${completed ? "#00ff8860" : "#ffffff15"}`,
+        borderRadius: 16, padding: "14px 14px",
+        display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center",
+        transition: "all 0.3s"
       }}>
-        {assembled.length === 0 && !result && (
+        {assembled.length === 0 && (
           <span style={{ color: "#333", fontSize: 13 }}>Нажимай слова снизу чтобы собрать предложение...</span>
         )}
-        {assembled.map((item, i) => (
-          <button key={item.key} onClick={() => removeWord(item)} style={{
-            background: result === "correct" ? "#00ff8820" : wrongIdx.includes(i) ? "#ff444420" : "#1a1a2e",
-            border: `1px solid ${result === "correct" ? "#00ff8860" : wrongIdx.includes(i) ? "#ff444460" : "#4444aa60"}`,
-            borderRadius: 8, padding: "7px 12px", color: result === "correct" ? "#00ff88" : wrongIdx.includes(i) ? "#ff4444" : "#aaaaff",
-            fontSize: 14, fontWeight: 600, cursor: result ? "default" : "pointer", transition: "all 0.15s"
-          }}>{item.w}</button>
-        ))}
+        {assembled.map((item, i) => {
+          const status = getWordStatus(item, i);
+          const bg = status === "correct" ? "#00ff8820" : status === "wrong" ? "#ff444420" : "#1a1a2e";
+          const border = status === "correct" ? "#00ff8860" : status === "wrong" ? "#ff444460" : "#4444aa60";
+          const color = status === "correct" ? "#00ff88" : status === "wrong" ? "#ff4444" : "#aaaaff";
+          return (
+            <button key={item.key} onClick={() => removeWord(item)} style={{
+              background: bg, border: `1px solid ${border}`, borderRadius: 8,
+              padding: "7px 12px", color, fontSize: 14, fontWeight: 600,
+              cursor: completed ? "default" : "pointer", transition: "all 0.2s"
+            }}>{item.w}</button>
+          );
+        })}
+        {completed && <span style={{ marginLeft: "auto", fontSize: 20 }}>🎉</span>}
       </div>
 
       {/* Word bank */}
@@ -951,50 +956,45 @@ function BuilderModule() {
           <button key={item.key} onClick={() => addWord(item)} style={{
             background: "#161b22", border: "1px solid #ffffff20", borderRadius: 8,
             padding: "7px 12px", color: "#ddd", fontSize: 14, fontWeight: 600,
-            cursor: "pointer", transition: "all 0.15s"
+            cursor: "pointer", transition: "all 0.15s", opacity: completed ? 0.3 : 1
           }}
-            onMouseOver={e => { e.currentTarget.style.background = "#1e2530"; e.currentTarget.style.borderColor = "#4488ff50"; }}
+            onMouseOver={e => { if (!completed) { e.currentTarget.style.background = "#1e2530"; e.currentTarget.style.borderColor = "#4488ff50"; }}}
             onMouseOut={e => { e.currentTarget.style.background = "#161b22"; e.currentTarget.style.borderColor = "#ffffff20"; }}
           >{item.w}</button>
         ))}
       </div>
 
-      {/* Action buttons */}
+      {/* Buttons */}
       <div style={{ display: "flex", gap: 10 }}>
-        {!result ? (
-          <>
-            <button onClick={check} disabled={assembled.length === 0}
-              style={{ flex: 2, background: assembled.length === 0 ? "#1a1a1a" : "linear-gradient(135deg, #00cc66, #008844)", border: "none", borderRadius: 12, padding: "13px", color: assembled.length === 0 ? "#444" : "#fff", fontWeight: 700, cursor: assembled.length === 0 ? "not-allowed" : "pointer", fontSize: 14 }}>
-              Проверить ✓
-            </button>
-            <button onClick={() => { setAssembled([]); setWordBank(shuffleArr(current.words.map((w, i) => ({ w, key: i })))); }}
-              style={{ background: "#0d1117", border: "1px solid #333", borderRadius: 12, padding: "13px 14px", color: "#555", cursor: "pointer", fontSize: 13 }}>
-              ↺
-            </button>
-          </>
-        ) : result === "correct" ? (
-          <button onClick={() => loadNew(current.id)} style={{ flex: 1, background: "linear-gradient(135deg, #00cc66, #008844)", border: "none", borderRadius: 12, padding: "13px", color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>
+        {completed ? (
+          <button onClick={() => { loadNew(current.id); }} style={{
+            flex: 1, background: "linear-gradient(135deg, #00cc66, #008844)",
+            border: "none", borderRadius: 12, padding: "13px", color: "#fff",
+            fontWeight: 700, cursor: "pointer", fontSize: 14
+          }}>
             Отлично! Следующее →
           </button>
         ) : (
           <>
-            <button onClick={retry} style={{ flex: 1, background: "#1a0a0a", border: "1px solid #ff444440", borderRadius: 12, padding: "13px", color: "#ff6666", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>
-              ↺ Попробовать ещё раз
-            </button>
-            <button onClick={() => loadNew(current.id)} style={{ flex: 1, background: "#0d1117", border: "1px solid #333", borderRadius: 12, padding: "13px", color: "#666", cursor: "pointer", fontSize: 13 }}>
-              Пропустить →
-            </button>
+            <button onClick={reset} style={{
+              flex: 1, background: "#0d1117", border: "1px solid #333",
+              borderRadius: 12, padding: "13px", color: "#666", cursor: "pointer", fontSize: 13
+            }}>↺ Сбросить</button>
+            <button onClick={() => { setTotal(t => t + 1); loadNew(current.id); }} style={{
+              background: "#0d1117", border: "1px solid #333",
+              borderRadius: 12, padding: "13px 16px", color: "#444", cursor: "pointer", fontSize: 13
+            }}>Пропустить</button>
           </>
         )}
       </div>
 
-      {/* Correct answer on wrong */}
-      {result === "wrong" && (
-        <div style={{ background: "#0a0a1a", border: "1px solid #4444ff30", borderRadius: 12, padding: "12px 16px", animation: "fadeIn 0.3s ease" }}>
-          <div style={{ color: "#555", fontSize: 11, marginBottom: 6 }}>Правильный порядок:</div>
+      {/* Show correct answer hint if 3+ words placed wrong */}
+      {!completed && assembled.length >= 3 && assembled.filter((item, i) => getWordStatus(item, i) === "wrong").length >= 2 && (
+        <div style={{ background: "#0a0a1a", border: "1px solid #4444ff20", borderRadius: 12, padding: "12px 16px" }}>
+          <div style={{ color: "#444", fontSize: 11, marginBottom: 6 }}>Подсказка — правильный порядок:</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {current.words.map((w, i) => (
-              <span key={i} style={{ background: "#00ff8810", border: "1px solid #00ff8830", borderRadius: 6, padding: "4px 10px", color: "#00ff88", fontSize: 13, fontWeight: 600 }}>{w}</span>
+              <span key={i} style={{ background: "#00ff8808", border: "1px solid #00ff8820", borderRadius: 6, padding: "4px 10px", color: "#00ff8880", fontSize: 13 }}>{w}</span>
             ))}
           </div>
         </div>
