@@ -4,98 +4,98 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 const ALL_PHRASES = [
   // ── A2: ЗНАКОМСТВО И БАЗОВОЕ ОБЩЕНИЕ ─────────────────────────────────────
-  { word: "Nice to meet you", transcription: "/naɪs tə miːt juː/", translation: "Приятно познакомиться", example: "Hi, I'm Alex. Nice to meet you!", level: "A2", category: "Знакомство" },
-  { word: "Where are you from?", transcription: "/wɛr ɑːr juː frɒm/", translation: "Откуда вы?", example: "Where are you from? — I'm from Russia.", level: "A2", category: "Знакомство" },
-  { word: "What do you do?", transcription: "/wɒt duː juː duː/", translation: "Чем вы занимаетесь?", example: "What do you do? — I work in music production.", level: "A2", category: "Знакомство" },
-  { word: "How long have you been learning English?", transcription: "/haʊ lɒŋ həv juː bɪn ˈlɜːrnɪŋ/", translation: "Как давно вы учите английский?", example: "How long have you been learning English? — About 3 months.", level: "A2", category: "Знакомство" },
-  { word: "My English isn't perfect", transcription: "/maɪ ˈɪŋɡlɪʃ ɪznt ˈpɜːrfɪkt/", translation: "Мой английский не идеален", example: "My English isn't perfect, but I'm working on it!", level: "A2", category: "Знакомство" },
-  { word: "Could you speak slower?", transcription: "/kʊd juː spiːk ˈsloʊər/", translation: "Не могли бы вы говорить медленнее?", example: "Could you speak slower, please? I'm still learning.", level: "A2", category: "Знакомство" },
-  { word: "Could you repeat that?", transcription: "/kʊd juː rɪˈpiːt ðæt/", translation: "Не могли бы вы повторить?", example: "Sorry, could you repeat that?", level: "A2", category: "Знакомство" },
-  { word: "What do you mean?", transcription: "/wɒt duː juː miːn/", translation: "Что вы имеете в виду?", example: "What do you mean by that?", level: "A2", category: "Знакомство" },
-  { word: "That's interesting!", transcription: "/ðæts ˈɪntrəstɪŋ/", translation: "Это интересно!", example: "That's interesting! Tell me more.", level: "A2", category: "Знакомство" },
+  { word: "Nice to meet you", transcription: "/naɪs tə miːt juː/", translation: "Приятно познакомиться", example: "Hi, I'm Alex. Nice to meet you!", cefr: "A2", category: "Знакомство" },
+  { word: "Where are you from?", transcription: "/wɛr ɑːr juː frɒm/", translation: "Откуда вы?", example: "Where are you from? — I'm from Russia.", cefr: "A2", category: "Знакомство" },
+  { word: "What do you do?", transcription: "/wɒt duː juː duː/", translation: "Чем вы занимаетесь?", example: "What do you do? — I work in music production.", cefr: "A2", category: "Знакомство" },
+  { word: "How long have you been learning English?", transcription: "/haʊ lɒŋ həv juː bɪn ˈlɜːrnɪŋ/", translation: "Как давно вы учите английский?", example: "How long have you been learning English? — About 3 months.", cefr: "A2", category: "Знакомство" },
+  { word: "My English isn't perfect", transcription: "/maɪ ˈɪŋɡlɪʃ ɪznt ˈpɜːrfɪkt/", translation: "Мой английский не идеален", example: "My English isn't perfect, but I'm working on it!", cefr: "A2", category: "Знакомство" },
+  { word: "Could you speak slower?", transcription: "/kʊd juː spiːk ˈsloʊər/", translation: "Не могли бы вы говорить медленнее?", example: "Could you speak slower, please? I'm still learning.", cefr: "A2", category: "Знакомство" },
+  { word: "Could you repeat that?", transcription: "/kʊd juː rɪˈpiːt ðæt/", translation: "Не могли бы вы повторить?", example: "Sorry, could you repeat that?", cefr: "A2", category: "Знакомство" },
+  { word: "What do you mean?", transcription: "/wɒt duː juː miːn/", translation: "Что вы имеете в виду?", example: "What do you mean by that?", cefr: "A2", category: "Знакомство" },
+  { word: "That's interesting!", transcription: "/ðæts ˈɪntrəstɪŋ/", translation: "Это интересно!", example: "That's interesting! Tell me more.", cefr: "A2", category: "Знакомство" },
 
   // ── A2: ПОВСЕДНЕВНЫЕ СИТУАЦИИ ─────────────────────────────────────────────
-  { word: "I'd like to order", transcription: "/aɪd laɪk tə ˈɔːrdər/", translation: "Я бы хотел заказать", example: "I'd like to order the chicken salad, please.", level: "A2", category: "Быт" },
-  { word: "How much does it cost?", transcription: "/haʊ mʌtʃ dʌz ɪt kɒst/", translation: "Сколько это стоит?", example: "Excuse me, how much does it cost?", level: "A2", category: "Быт" },
-  { word: "Can I pay by card?", transcription: "/kæn aɪ peɪ baɪ kɑːrd/", translation: "Можно оплатить картой?", example: "Can I pay by card or is it cash only?", level: "A2", category: "Быт" },
-  { word: "I'm looking for", transcription: "/aɪm ˈlʊkɪŋ fɔːr/", translation: "Я ищу", example: "I'm looking for the nearest pharmacy.", level: "A2", category: "Быт" },
-  { word: "Excuse me, where is", transcription: "/ɪkˈskjuːz miː wɛr ɪz/", translation: "Извините, где находится", example: "Excuse me, where is the train station?", level: "A2", category: "Быт" },
-  { word: "Can you help me?", transcription: "/kæn juː hɛlp miː/", translation: "Вы можете мне помочь?", example: "Can you help me find this address?", level: "A2", category: "Быт" },
-  { word: "I need to reschedule", transcription: "/aɪ niːd tə ˌriːˈskɛdʒuːl/", translation: "Мне нужно перенести встречу", example: "I need to reschedule our meeting to Friday.", level: "A2", category: "Быт" },
-  { word: "Sorry I'm late", transcription: "/ˈsɒri aɪm leɪt/", translation: "Извините, я опоздал", example: "Sorry I'm late, there was a lot of traffic.", level: "A2", category: "Быт" },
-  { word: "It was great talking to you", transcription: "/ɪt wɒz ɡreɪt ˈtɔːkɪŋ tə juː/", translation: "Было приятно пообщаться", example: "It was great talking to you! See you next time.", level: "A2", category: "Быт" },
+  { word: "I'd like to order", transcription: "/aɪd laɪk tə ˈɔːrdər/", translation: "Я бы хотел заказать", example: "I'd like to order the chicken salad, please.", cefr: "A2", category: "Быт" },
+  { word: "How much does it cost?", transcription: "/haʊ mʌtʃ dʌz ɪt kɒst/", translation: "Сколько это стоит?", example: "Excuse me, how much does it cost?", cefr: "A2", category: "Быт" },
+  { word: "Can I pay by card?", transcription: "/kæn aɪ peɪ baɪ kɑːrd/", translation: "Можно оплатить картой?", example: "Can I pay by card or is it cash only?", cefr: "A2", category: "Быт" },
+  { word: "I'm looking for", transcription: "/aɪm ˈlʊkɪŋ fɔːr/", translation: "Я ищу", example: "I'm looking for the nearest pharmacy.", cefr: "A2", category: "Быт" },
+  { word: "Excuse me, where is", transcription: "/ɪkˈskjuːz miː wɛr ɪz/", translation: "Извините, где находится", example: "Excuse me, where is the train station?", cefr: "A2", category: "Быт" },
+  { word: "Can you help me?", transcription: "/kæn juː hɛlp miː/", translation: "Вы можете мне помочь?", example: "Can you help me find this address?", cefr: "A2", category: "Быт" },
+  { word: "I need to reschedule", transcription: "/aɪ niːd tə ˌriːˈskɛdʒuːl/", translation: "Мне нужно перенести встречу", example: "I need to reschedule our meeting to Friday.", cefr: "A2", category: "Быт" },
+  { word: "Sorry I'm late", transcription: "/ˈsɒri aɪm leɪt/", translation: "Извините, я опоздал", example: "Sorry I'm late, there was a lot of traffic.", cefr: "A2", category: "Быт" },
+  { word: "It was great talking to you", transcription: "/ɪt wɒz ɡreɪt ˈtɔːkɪŋ tə juː/", translation: "Было приятно пообщаться", example: "It was great talking to you! See you next time.", cefr: "A2", category: "Быт" },
 
   // ── A2: БАЗОВЫЕ ПАТТЕРНЫ ──────────────────────────────────────────────────
-  { word: "I'm working on it", transcription: "/aɪm ˈwɜːrkɪŋ ɒn ɪt/", translation: "Я работаю над этим", example: "Don't worry, I'm working on it.", level: "A2", category: "Паттерны" },
-  { word: "I'm going to", transcription: "/aɪm ˈɡoʊɪŋ tə/", translation: "Я собираюсь", example: "I'm going to learn English this year.", level: "A2", category: "Паттерны" },
-  { word: "I want to", transcription: "/aɪ wɒnt tə/", translation: "Я хочу", example: "I want to improve my English.", level: "A2", category: "Паттерны" },
-  { word: "I need to", transcription: "/aɪ niːd tə/", translation: "Мне нужно", example: "I need to call him back.", level: "A2", category: "Паттерны" },
-  { word: "I can't", transcription: "/aɪ kɑːnt/", translation: "Я не могу", example: "I can't make it tonight, sorry.", level: "A2", category: "Паттерны" },
-  { word: "I think that", transcription: "/aɪ θɪŋk ðæt/", translation: "Я думаю, что", example: "I think that you're right.", level: "A2", category: "Паттерны" },
-  { word: "There is / There are", transcription: "/ðɛr ɪz / ðɛr ɑːr/", translation: "Есть / Имеется", example: "There is a problem we need to discuss.", level: "A2", category: "Паттерны" },
-  { word: "It's easy to", transcription: "/ɪts ˈiːzi tə/", translation: "Легко / Несложно", example: "It's easy to get lost in this city.", level: "A2", category: "Паттерны" },
+  { word: "I'm working on it", transcription: "/aɪm ˈwɜːrkɪŋ ɒn ɪt/", translation: "Я работаю над этим", example: "Don't worry, I'm working on it.", cefr: "A2", category: "Паттерны" },
+  { word: "I'm going to", transcription: "/aɪm ˈɡoʊɪŋ tə/", translation: "Я собираюсь", example: "I'm going to learn English this year.", cefr: "A2", category: "Паттерны" },
+  { word: "I want to", transcription: "/aɪ wɒnt tə/", translation: "Я хочу", example: "I want to improve my English.", cefr: "A2", category: "Паттерны" },
+  { word: "I need to", transcription: "/aɪ niːd tə/", translation: "Мне нужно", example: "I need to call him back.", cefr: "A2", category: "Паттерны" },
+  { word: "I can't", transcription: "/aɪ kɑːnt/", translation: "Я не могу", example: "I can't make it tonight, sorry.", cefr: "A2", category: "Паттерны" },
+  { word: "I think that", transcription: "/aɪ θɪŋk ðæt/", translation: "Я думаю, что", example: "I think that you're right.", cefr: "A2", category: "Паттерны" },
+  { word: "There is / There are", transcription: "/ðɛr ɪz / ðɛr ɑːr/", translation: "Есть / Имеется", example: "There is a problem we need to discuss.", cefr: "A2", category: "Паттерны" },
+  { word: "It's easy to", transcription: "/ɪts ˈiːzi tə/", translation: "Легко / Несложно", example: "It's easy to get lost in this city.", cefr: "A2", category: "Паттерны" },
 
   // ── B1: РАЗГОВОРНЫЕ БЛОКИ ─────────────────────────────────────────────────
-  { word: "In my opinion", transcription: "/ɪn maɪ əˈpɪnjən/", translation: "На мой взгляд", example: "In my opinion, this is the best approach.", level: "B1", category: "Мнение" },
-  { word: "Actually, I'm not sure", transcription: "/ˈæktʃuəli aɪm nɒt ʃʊər/", translation: "Честно говоря, я не уверен", example: "Actually, I'm not sure about that.", level: "B1", category: "Мнение" },
-  { word: "That's a good point", transcription: "/ðæts ə ɡʊd pɔɪnt/", translation: "Это хорошее замечание", example: "That's a good point. I agree with you.", level: "B1", category: "Мнение" },
-  { word: "Let me think about it", transcription: "/lɛt miː θɪŋk əˈbaʊt ɪt/", translation: "Дайте мне подумать", example: "Let me think about it for a second.", level: "B1", category: "Мнение" },
-  { word: "I see your point, but", transcription: "/aɪ siː jɔːr pɔɪnt bʌt/", translation: "Я понимаю вашу точку зрения, но", example: "I see your point, but I disagree.", level: "B1", category: "Мнение" },
-  { word: "So what you're saying is", transcription: "/soʊ wɒt jʊər ˈseɪɪŋ ɪz/", translation: "Итак, вы говорите, что", example: "So what you're saying is we need more time?", level: "B1", category: "Мнение" },
-  { word: "By the way", transcription: "/baɪ ðə weɪ/", translation: "Кстати", example: "By the way, have you heard the news?", level: "B1", category: "Мнение" },
-  { word: "Anyway, getting back to", transcription: "/ˈɛniweɪ ˈɡɛtɪŋ bæk tə/", translation: "В общем, возвращаясь к теме", example: "Anyway, getting back to the main topic.", level: "B1", category: "Мнение" },
+  { word: "In my opinion", transcription: "/ɪn maɪ əˈpɪnjən/", translation: "На мой взгляд", example: "In my opinion, this is the best approach.", cefr: "B1", category: "Мнение" },
+  { word: "Actually, I'm not sure", transcription: "/ˈæktʃuəli aɪm nɒt ʃʊər/", translation: "Честно говоря, я не уверен", example: "Actually, I'm not sure about that.", cefr: "B1", category: "Мнение" },
+  { word: "That's a good point", transcription: "/ðæts ə ɡʊd pɔɪnt/", translation: "Это хорошее замечание", example: "That's a good point. I agree with you.", cefr: "B1", category: "Мнение" },
+  { word: "Let me think about it", transcription: "/lɛt miː θɪŋk əˈbaʊt ɪt/", translation: "Дайте мне подумать", example: "Let me think about it for a second.", cefr: "B1", category: "Мнение" },
+  { word: "I see your point, but", transcription: "/aɪ siː jɔːr pɔɪnt bʌt/", translation: "Я понимаю вашу точку зрения, но", example: "I see your point, but I disagree.", cefr: "B1", category: "Мнение" },
+  { word: "So what you're saying is", transcription: "/soʊ wɒt jʊər ˈseɪɪŋ ɪz/", translation: "Итак, вы говорите, что", example: "So what you're saying is we need more time?", cefr: "B1", category: "Мнение" },
+  { word: "By the way", transcription: "/baɪ ðə weɪ/", translation: "Кстати", example: "By the way, have you heard the news?", cefr: "B1", category: "Мнение" },
+  { word: "Anyway, getting back to", transcription: "/ˈɛniweɪ ˈɡɛtɪŋ bæk tə/", translation: "В общем, возвращаясь к теме", example: "Anyway, getting back to the main topic.", cefr: "B1", category: "Мнение" },
 
   // ── B1: ФРАЗОВЫЕ ГЛАГОЛЫ ─────────────────────────────────────────────────
-  { word: "go ahead", transcription: "/ɡoʊ əˈhɛd/", translation: "продолжай / давай", example: "Go ahead, I'm listening.", level: "B1", category: "Фразовые глаголы" },
-  { word: "go through", transcription: "/ɡoʊ θruː/", translation: "пережить / пройти через", example: "We went through a tough time.", level: "B1", category: "Фразовые глаголы" },
-  { word: "figure out", transcription: "/ˈfɪɡjər aʊt/", translation: "разобраться / понять", example: "I need to figure out this problem.", level: "B1", category: "Фразовые глаголы" },
-  { word: "come up with", transcription: "/kʌm ʌp wɪð/", translation: "придумать / предложить", example: "She came up with a great idea.", level: "B1", category: "Фразовые глаголы" },
-  { word: "get along", transcription: "/ɡɛt əˈlɒŋ/", translation: "ладить / уживаться", example: "We get along very well.", level: "B1", category: "Фразовые глаголы" },
-  { word: "put off", transcription: "/pʊt ɒf/", translation: "откладывать", example: "Don't put off until tomorrow.", level: "B1", category: "Фразовые глаголы" },
-  { word: "break down", transcription: "/breɪk daʊn/", translation: "сломаться / расстроиться", example: "My car broke down this morning.", level: "B1", category: "Фразовые глаголы" },
-  { word: "turn out", transcription: "/tɜːrn aʊt/", translation: "оказаться / выясниться", example: "It turned out to be a great day.", level: "B1", category: "Фразовые глаголы" },
-  { word: "bring up", transcription: "/brɪŋ ʌp/", translation: "поднять тему / воспитать", example: "He brought up an interesting point.", level: "B1", category: "Фразовые глаголы" },
-  { word: "set up", transcription: "/sɛt ʌp/", translation: "настроить / организовать", example: "Let's set up a meeting.", level: "B1", category: "Фразовые глаголы" },
-  { word: "deal with", transcription: "/diːl wɪð/", translation: "справляться / разбираться", example: "How do you deal with stress?", level: "B1", category: "Фразовые глаголы" },
-  { word: "look forward to", transcription: "/lʊk ˈfɔːrwərd tuː/", translation: "с нетерпением ждать", example: "I look forward to meeting you.", level: "B1", category: "Фразовые глаголы" },
-  { word: "pick up", transcription: "/pɪk ʌp/", translation: "подхватить / забрать / освоить", example: "I picked up some English from movies.", level: "B1", category: "Фразовые глаголы" },
-  { word: "run out of", transcription: "/rʌn aʊt əv/", translation: "закончиться / исчерпать", example: "We ran out of time.", level: "B1", category: "Фразовые глаголы" },
-  { word: "look into", transcription: "/lʊk ˈɪntə/", translation: "изучить / исследовать", example: "I'll look into this issue.", level: "B1", category: "Фразовые глаголы" },
-  { word: "give up", transcription: "/ɡɪv ʌp/", translation: "сдаться / бросить", example: "Don't give up on your English!", level: "B1", category: "Фразовые глаголы" },
-  { word: "take over", transcription: "/teɪk ˈoʊvər/", translation: "взять на себя / захватить", example: "She took over the project last week.", level: "B1", category: "Фразовые глаголы" },
-  { word: "end up", transcription: "/ɛnd ʌp/", translation: "в итоге оказаться", example: "We ended up staying till midnight.", level: "B1", category: "Фразовые глаголы" },
+  { word: "go ahead", transcription: "/ɡoʊ əˈhɛd/", translation: "продолжай / давай", example: "Go ahead, I'm listening.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "go through", transcription: "/ɡoʊ θruː/", translation: "пережить / пройти через", example: "We went through a tough time.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "figure out", transcription: "/ˈfɪɡjər aʊt/", translation: "разобраться / понять", example: "I need to figure out this problem.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "come up with", transcription: "/kʌm ʌp wɪð/", translation: "придумать / предложить", example: "She came up with a great idea.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "get along", transcription: "/ɡɛt əˈlɒŋ/", translation: "ладить / уживаться", example: "We get along very well.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "put off", transcription: "/pʊt ɒf/", translation: "откладывать", example: "Don't put off until tomorrow.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "break down", transcription: "/breɪk daʊn/", translation: "сломаться / расстроиться", example: "My car broke down this morning.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "turn out", transcription: "/tɜːrn aʊt/", translation: "оказаться / выясниться", example: "It turned out to be a great day.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "bring up", transcription: "/brɪŋ ʌp/", translation: "поднять тему / воспитать", example: "He brought up an interesting point.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "set up", transcription: "/sɛt ʌp/", translation: "настроить / организовать", example: "Let's set up a meeting.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "deal with", transcription: "/diːl wɪð/", translation: "справляться / разбираться", example: "How do you deal with stress?", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "look forward to", transcription: "/lʊk ˈfɔːrwərd tuː/", translation: "с нетерпением ждать", example: "I look forward to meeting you.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "pick up", transcription: "/pɪk ʌp/", translation: "подхватить / забрать / освоить", example: "I picked up some English from movies.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "run out of", transcription: "/rʌn aʊt əv/", translation: "закончиться / исчерпать", example: "We ran out of time.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "look into", transcription: "/lʊk ˈɪntə/", translation: "изучить / исследовать", example: "I'll look into this issue.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "give up", transcription: "/ɡɪv ʌp/", translation: "сдаться / бросить", example: "Don't give up on your English!", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "take over", transcription: "/teɪk ˈoʊvər/", translation: "взять на себя / захватить", example: "She took over the project last week.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "end up", transcription: "/ɛnd ʌp/", translation: "в итоге оказаться", example: "We ended up staying till midnight.", cefr: "B1", category: "Фразовые глаголы" },
 
   // ── B1: ПАТТЕРНЫ И ГРАММАТИКА ────────────────────────────────────────────
-  { word: "I've been working", transcription: "/aɪv bɪn ˈwɜːrkɪŋ/", translation: "я работаю (уже какое-то время)", example: "I've been working on this for hours.", level: "B1", category: "Грамматика" },
-  { word: "I used to", transcription: "/aɪ juːzd tə/", translation: "раньше я / бывало я", example: "I used to live in a small town.", level: "B1", category: "Грамматика" },
-  { word: "I should have", transcription: "/aɪ ʃʊd həv/", translation: "мне следовало бы", example: "I should have called you earlier.", level: "B1", category: "Грамматика" },
-  { word: "If I were you", transcription: "/ɪf aɪ wɜːr juː/", translation: "Если бы я был на вашем месте", example: "If I were you, I'd try again.", level: "B1", category: "Грамматика" },
-  { word: "I'd rather", transcription: "/aɪd ˈrɑːðər/", translation: "Я бы предпочёл", example: "I'd rather stay home tonight.", level: "B1", category: "Грамматика" },
-  { word: "It depends on", transcription: "/ɪt dɪˈpɛndz ɒn/", translation: "Это зависит от", example: "It depends on the weather.", level: "B1", category: "Грамматика" },
+  { word: "I've been working", transcription: "/aɪv bɪn ˈwɜːrkɪŋ/", translation: "я работаю (уже какое-то время)", example: "I've been working on this for hours.", cefr: "B1", category: "Грамматика" },
+  { word: "I used to", transcription: "/aɪ juːzd tə/", translation: "раньше я / бывало я", example: "I used to live in a small town.", cefr: "B1", category: "Грамматика" },
+  { word: "I should have", transcription: "/aɪ ʃʊd həv/", translation: "мне следовало бы", example: "I should have called you earlier.", cefr: "B1", category: "Грамматика" },
+  { word: "If I were you", transcription: "/ɪf aɪ wɜːr juː/", translation: "Если бы я был на вашем месте", example: "If I were you, I'd try again.", cefr: "B1", category: "Грамматика" },
+  { word: "I'd rather", transcription: "/aɪd ˈrɑːðər/", translation: "Я бы предпочёл", example: "I'd rather stay home tonight.", cefr: "B1", category: "Грамматика" },
+  { word: "It depends on", transcription: "/ɪt dɪˈpɛndz ɒn/", translation: "Это зависит от", example: "It depends on the weather.", cefr: "B1", category: "Грамматика" },
 
   // ── B1: РАБОТА И БИЗНЕС ──────────────────────────────────────────────────
-  { word: "I'm working on a project", transcription: "/aɪm ˈwɜːrkɪŋ ɒn ə ˈprɒdʒɛkt/", translation: "Я работаю над проектом", example: "I'm working on a project related to AI music.", level: "B1", category: "Работа" },
-  { word: "Let me get back to you", transcription: "/lɛt miː ɡɛt bæk tə juː/", translation: "Я вернусь к этому позже", example: "Let me get back to you on that tomorrow.", level: "B1", category: "Работа" },
-  { word: "Could you send me the details?", transcription: "/kʊd juː sɛnd miː ðə ˈdiːteɪlz/", translation: "Не могли бы вы прислать детали?", example: "Could you send me the details by email?", level: "B1", category: "Работа" },
-  { word: "I appreciate your help", transcription: "/aɪ əˈpriːʃieɪt jɔːr hɛlp/", translation: "Я ценю вашу помощь", example: "I appreciate your help with this task.", level: "B1", category: "Работа" },
-  { word: "That sounds like a great idea", transcription: "/ðæt saʊndz laɪk ə ɡreɪt aɪˈdɪə/", translation: "Это звучит как отличная идея", example: "That sounds like a great idea! Let's try it.", level: "B1", category: "Работа" },
-  { word: "I completely agree", transcription: "/aɪ kəmˈpliːtli əˈɡriː/", translation: "Я полностью согласен", example: "I completely agree with your approach.", level: "B1", category: "Работа" },
+  { word: "I'm working on a project", transcription: "/aɪm ˈwɜːrkɪŋ ɒn ə ˈprɒdʒɛkt/", translation: "Я работаю над проектом", example: "I'm working on a project related to AI music.", cefr: "B1", category: "Работа" },
+  { word: "Let me get back to you", transcription: "/lɛt miː ɡɛt bæk tə juː/", translation: "Я вернусь к этому позже", example: "Let me get back to you on that tomorrow.", cefr: "B1", category: "Работа" },
+  { word: "Could you send me the details?", transcription: "/kʊd juː sɛnd miː ðə ˈdiːteɪlz/", translation: "Не могли бы вы прислать детали?", example: "Could you send me the details by email?", cefr: "B1", category: "Работа" },
+  { word: "I appreciate your help", transcription: "/aɪ əˈpriːʃieɪt jɔːr hɛlp/", translation: "Я ценю вашу помощь", example: "I appreciate your help with this task.", cefr: "B1", category: "Работа" },
+  { word: "That sounds like a great idea", transcription: "/ðæt saʊndz laɪk ə ɡreɪt aɪˈdɪə/", translation: "Это звучит как отличная идея", example: "That sounds like a great idea! Let's try it.", cefr: "B1", category: "Работа" },
+  { word: "I completely agree", transcription: "/aɪ kəmˈpliːtli əˈɡriː/", translation: "Я полностью согласен", example: "I completely agree with your approach.", cefr: "B1", category: "Работа" },
 
   // ── B2: ПРОДВИНУТЫЕ ВЫРАЖЕНИЯ ────────────────────────────────────────────
-  { word: "To be honest", transcription: "/tə biː ˈɒnɪst/", translation: "Честно говоря", example: "To be honest, I don't know.", level: "B2", category: "Продвинутые" },
-  { word: "In other words", transcription: "/ɪn ˈʌðər wɜːrdz/", translation: "Другими словами", example: "In other words, we failed.", level: "B2", category: "Продвинутые" },
-  { word: "What I mean is", transcription: "/wɒt aɪ miːn ɪz/", translation: "Я имею в виду", example: "What I mean is we need more time.", level: "B2", category: "Продвинутые" },
-  { word: "It's worth noting that", transcription: "/ɪts wɜːrθ ˈnoʊtɪŋ ðæt/", translation: "Стоит отметить, что", example: "It's worth noting that prices have risen.", level: "B2", category: "Продвинутые" },
-  { word: "On the other hand", transcription: "/ɒn ðə ˈʌðər hænd/", translation: "С другой стороны", example: "On the other hand, it could work.", level: "B2", category: "Продвинутые" },
-  { word: "As far as I know", transcription: "/æz fɑːr æz aɪ noʊ/", translation: "Насколько я знаю", example: "As far as I know, the project is on track.", level: "B2", category: "Продвинутые" },
-  { word: "It goes without saying", transcription: "/ɪt ɡoʊz wɪˈðaʊt ˈseɪɪŋ/", translation: "Само собой разумеется", example: "It goes without saying that practice is key.", level: "B2", category: "Продвинутые" },
-  { word: "I couldn't agree more", transcription: "/aɪ ˈkʊdnt əˈɡriː mɔːr/", translation: "Полностью с вами согласен", example: "I couldn't agree more with that statement.", level: "B2", category: "Продвинутые" },
-  { word: "Having said that", transcription: "/ˈhævɪŋ sɛd ðæt/", translation: "Тем не менее / При этом", example: "Having said that, we should still try.", level: "B2", category: "Продвинутые" },
-  { word: "It's a matter of", transcription: "/ɪts ə ˈmætər əv/", translation: "Это вопрос / дело в том, что", example: "It's a matter of time before it works.", level: "B2", category: "Продвинутые" },
-  { word: "There's no doubt that", transcription: "/ðɛrz noʊ daʊt ðæt/", translation: "Нет никаких сомнений, что", example: "There's no doubt that English opens doors.", level: "B2", category: "Продвинутые" },
-  { word: "I'd be happy to", transcription: "/aɪd biː ˈhæpi tə/", translation: "Я с удовольствием", example: "I'd be happy to help you with that.", level: "B2", category: "Продвинутые" },
-  { word: "It turns out that", transcription: "/ɪt tɜːrnz aʊt ðæt/", translation: "Оказывается, что", example: "It turns out that I was right all along.", level: "B2", category: "Продвинутые" },
-  { word: "What strikes me is", transcription: "/wɒt straɪks miː ɪz/", translation: "Что меня поражает — это", example: "What strikes me is how fast AI evolves.", level: "B2", category: "Продвинутые" },
+  { word: "To be honest", transcription: "/tə biː ˈɒnɪst/", translation: "Честно говоря", example: "To be honest, I don't know.", cefr: "B2", category: "Продвинутые" },
+  { word: "In other words", transcription: "/ɪn ˈʌðər wɜːrdz/", translation: "Другими словами", example: "In other words, we failed.", cefr: "B2", category: "Продвинутые" },
+  { word: "What I mean is", transcription: "/wɒt aɪ miːn ɪz/", translation: "Я имею в виду", example: "What I mean is we need more time.", cefr: "B2", category: "Продвинутые" },
+  { word: "It's worth noting that", transcription: "/ɪts wɜːrθ ˈnoʊtɪŋ ðæt/", translation: "Стоит отметить, что", example: "It's worth noting that prices have risen.", cefr: "B2", category: "Продвинутые" },
+  { word: "On the other hand", transcription: "/ɒn ðə ˈʌðər hænd/", translation: "С другой стороны", example: "On the other hand, it could work.", cefr: "B2", category: "Продвинутые" },
+  { word: "As far as I know", transcription: "/æz fɑːr æz aɪ noʊ/", translation: "Насколько я знаю", example: "As far as I know, the project is on track.", cefr: "B2", category: "Продвинутые" },
+  { word: "It goes without saying", transcription: "/ɪt ɡoʊz wɪˈðaʊt ˈseɪɪŋ/", translation: "Само собой разумеется", example: "It goes without saying that practice is key.", cefr: "B2", category: "Продвинутые" },
+  { word: "I couldn't agree more", transcription: "/aɪ ˈkʊdnt əˈɡriː mɔːr/", translation: "Полностью с вами согласен", example: "I couldn't agree more with that statement.", cefr: "B2", category: "Продвинутые" },
+  { word: "Having said that", transcription: "/ˈhævɪŋ sɛd ðæt/", translation: "Тем не менее / При этом", example: "Having said that, we should still try.", cefr: "B2", category: "Продвинутые" },
+  { word: "It's a matter of", transcription: "/ɪts ə ˈmætər əv/", translation: "Это вопрос / дело в том, что", example: "It's a matter of time before it works.", cefr: "B2", category: "Продвинутые" },
+  { word: "There's no doubt that", transcription: "/ðɛrz noʊ daʊt ðæt/", translation: "Нет никаких сомнений, что", example: "There's no doubt that English opens doors.", cefr: "B2", category: "Продвинутые" },
+  { word: "I'd be happy to", transcription: "/aɪd biː ˈhæpi tə/", translation: "Я с удовольствием", example: "I'd be happy to help you with that.", cefr: "B2", category: "Продвинутые" },
+  { word: "It turns out that", transcription: "/ɪt tɜːrnz aʊt ðæt/", translation: "Оказывается, что", example: "It turns out that I was right all along.", cefr: "B2", category: "Продвинутые" },
+  { word: "What strikes me is", transcription: "/wɒt straɪks miː ɪz/", translation: "Что меня поражает — это", example: "What strikes me is how fast AI evolves.", cefr: "B2", category: "Продвинутые" },
 ];
 
 // Filter by user level for display
@@ -202,11 +202,11 @@ function getCardsDue(cards) {
 function updateCard(card, quality) {
   const intervals = [1, 3, 7, 14, 30];
   const newLevel =
-    quality === 0 ? 0 : Math.min((card.level || 0) + (quality - 1), 4);
+    quality === 0 ? 0 : Math.min((card.srsLevel || 0) + (quality - 1), 4);
   const delay = intervals[newLevel] * 24 * 60 * 60 * 1000;
   return {
     ...card,
-    level: newLevel,
+    srsLevel: newLevel,
     nextReview: Date.now() + delay,
     reviewed: (card.reviewed || 0) + 1,
   };
@@ -224,13 +224,13 @@ function todayKey() {
 function useSRS() {
   const [cards, setCards] = useState(() => {
     try {
-      const saved = localStorage.getItem("srs_cards_v2");
+      const saved = localStorage.getItem("srs_cards_v3");
       if (saved) return JSON.parse(saved);
     } catch {}
     return FREQ_WORDS.map((w, i) => ({
       ...w,
       id: i,
-      level: 0,
+      srsLevel: 0,
       nextReview: Date.now() + 999 * 24 * 3600 * 1000,
       reviewed: 0,
       unlocked: false,
@@ -250,7 +250,7 @@ function useSRS() {
 
   useEffect(() => {
     try {
-      localStorage.setItem("srs_cards_v2", JSON.stringify(cards));
+      localStorage.setItem("srs_cards_v3", JSON.stringify(cards));
     } catch {}
   }, [cards]);
 
@@ -273,7 +273,7 @@ function useSRS() {
       const next = [...prev];
       for (const lvl of levelOrder) {
         for (let i = 0; i < next.length && unlocked < canUnlock; i++) {
-          if (!next[i].unlocked && next[i].level === lvl) {
+          if (!next[i].unlocked && next[i].cefr === lvl) {
             next[i] = { ...next[i], unlocked: true, nextReview: Date.now() };
             unlocked++;
           }
@@ -293,7 +293,7 @@ function useSRS() {
 
   const unlockedCards = cards.filter((c) => c.unlocked);
   const due = getCardsDue(unlockedCards);
-  const mastered = cards.filter((c) => c.level >= 4).length;
+  const mastered = cards.filter((c) => (c.srsLevel || 0) >= 4).length;
   const newAvailable = NEW_PER_DAY - unlockedToday;
   const totalUnlocked = unlockedCards.length;
 
@@ -599,9 +599,9 @@ function SRSModule({ due, mastered, cards, reviewCard, unlockNewCards, newAvaila
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ color: "#888", fontSize: 13 }}>Повторить: <b style={{ color: "#fff" }}>{due.length}</b></span>
         <span style={{ color: "#888", fontSize: 12 }}>
-          <b style={{ color: "#4488ff" }}>{cards.filter(c=>c.unlocked&&c.level==="A2").length}</b><span style={{color:"#333"}}>/</span>
-          <b style={{ color: "#00ff88" }}>{cards.filter(c=>c.unlocked&&c.level==="B1").length}</b><span style={{color:"#333"}}>/</span>
-          <b style={{ color: "#cc44ff" }}>{cards.filter(c=>c.unlocked&&c.level==="B2").length}</b>
+          <b style={{ color: "#4488ff" }}>{cards.filter(c=>c.unlocked&&c.cefr==="A2").length}</b><span style={{color:"#333"}}>/</span>
+          <b style={{ color: "#00ff88" }}>{cards.filter(c=>c.unlocked&&c.cefr==="B1").length}</b><span style={{color:"#333"}}>/</span>
+          <b style={{ color: "#cc44ff" }}>{cards.filter(c=>c.unlocked&&c.cefr==="B2").length}</b>
           <span style={{color:"#555", fontSize:10}}> A2/B1/B2</span>
         </span>
       </div>
@@ -609,7 +609,7 @@ function SRSModule({ due, mastered, cards, reviewCard, unlockNewCards, newAvaila
       <div style={{ background: flipped ? "linear-gradient(135deg, #0a2a1a, #0d1a0d)" : "linear-gradient(135deg, #0a0a1a, #0d0d2a)", border: `1px solid ${flipped ? "#00ff8850" : "#ffffff15"}`, borderRadius: 20, padding: "28px 24px", minHeight: 180, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 10, transition: "all 0.3s", userSelect: "none" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ color: "#555", fontSize: 11, letterSpacing: 2, textTransform: "uppercase" }}>фраза</span>
-          {current.level && <span style={{ background: current.level === "A2" ? "#4488ff20" : current.level === "B1" ? "#00ff8820" : "#cc44ff20", color: current.level === "A2" ? "#4488ff" : current.level === "B1" ? "#00ff88" : "#cc44ff", borderRadius: 6, padding: "2px 7px", fontSize: 10, fontWeight: 700 }}>{current.level}</span>}
+          {current.cefr && <span style={{ background: current.cefr === "A2" ? "#4488ff20" : current.cefr === "B1" ? "#00ff8820" : "#cc44ff20", color: current.cefr === "A2" ? "#4488ff" : current.cefr === "B1" ? "#00ff88" : "#cc44ff", borderRadius: 6, padding: "2px 7px", fontSize: 10, fontWeight: 700 }}>{current.cefr}</span>}
           {current.category && <span style={{ color: "#333", fontSize: 10 }}>{current.category}</span>}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -767,30 +767,30 @@ function QuizModule({ studiedCards }) {
 
 const BUILDER_SENTENCES = [
   // A2
-  { id: 1, level: "A2", words: ["Go", "ahead", "I'm", "listening"], hint: "Продолжай, я слушаю" },
-  { id: 2, level: "A2", words: ["I", "need", "to", "figure", "out", "this", "problem"], hint: "Мне нужно разобраться с этой проблемой" },
-  { id: 3, level: "A2", words: ["Could", "you", "repeat", "that", "please"], hint: "Не могли бы вы повторить?" },
-  { id: 4, level: "A2", words: ["I'm", "going", "to", "learn", "English", "this", "year"], hint: "Я собираюсь учить английский в этом году" },
-  { id: 5, level: "A2", words: ["It", "depends", "on", "the", "weather"], hint: "Это зависит от погоды" },
-  { id: 6, level: "A2", words: ["Can", "you", "help", "me", "please"], hint: "Вы можете мне помочь?" },
-  { id: 7, level: "A2", words: ["I'm", "looking", "for", "the", "train", "station"], hint: "Я ищу железнодорожную станцию" },
-  { id: 8, level: "A2", words: ["Sorry", "I'm", "late", "there", "was", "traffic"], hint: "Извините, я опоздал, были пробки" },
+  { id: 1, cefr: "A2", words: ["Go", "ahead", "I'm", "listening"], hint: "Продолжай, я слушаю" },
+  { id: 2, cefr: "A2", words: ["I", "need", "to", "figure", "out", "this", "problem"], hint: "Мне нужно разобраться с этой проблемой" },
+  { id: 3, cefr: "A2", words: ["Could", "you", "repeat", "that", "please"], hint: "Не могли бы вы повторить?" },
+  { id: 4, cefr: "A2", words: ["I'm", "going", "to", "learn", "English", "this", "year"], hint: "Я собираюсь учить английский в этом году" },
+  { id: 5, cefr: "A2", words: ["It", "depends", "on", "the", "weather"], hint: "Это зависит от погоды" },
+  { id: 6, cefr: "A2", words: ["Can", "you", "help", "me", "please"], hint: "Вы можете мне помочь?" },
+  { id: 7, cefr: "A2", words: ["I'm", "looking", "for", "the", "train", "station"], hint: "Я ищу железнодорожную станцию" },
+  { id: 8, cefr: "A2", words: ["Sorry", "I'm", "late", "there", "was", "traffic"], hint: "Извините, я опоздал, были пробки" },
   // B1
-  { id: 9, level: "B1", words: ["She", "came", "up", "with", "a", "great", "idea"], hint: "Она придумала отличную идею" },
-  { id: 10, level: "B1", words: ["We", "went", "through", "a", "tough", "time"], hint: "Мы пережили тяжёлые времена" },
-  { id: 11, level: "B1", words: ["It", "turned", "out", "to", "be", "a", "great", "day"], hint: "Оказалось, что это был отличный день" },
-  { id: 12, level: "B1", words: ["I've", "been", "working", "on", "this", "for", "hours"], hint: "Я работаю над этим уже несколько часов" },
-  { id: 13, level: "B1", words: ["Let", "me", "get", "back", "to", "you", "on", "that"], hint: "Я вернусь к этому позже" },
-  { id: 14, level: "B1", words: ["That", "sounds", "like", "a", "great", "idea"], hint: "Это звучит как отличная идея" },
-  { id: 15, level: "B1", words: ["I", "used", "to", "live", "in", "a", "small", "town"], hint: "Раньше я жил в маленьком городе" },
-  { id: 16, level: "B1", words: ["How", "do", "you", "deal", "with", "stress"], hint: "Как вы справляетесь со стрессом?" },
+  { id: 9, cefr: "B1", words: ["She", "came", "up", "with", "a", "great", "idea"], hint: "Она придумала отличную идею" },
+  { id: 10, cefr: "B1", words: ["We", "went", "through", "a", "tough", "time"], hint: "Мы пережили тяжёлые времена" },
+  { id: 11, cefr: "B1", words: ["It", "turned", "out", "to", "be", "a", "great", "day"], hint: "Оказалось, что это был отличный день" },
+  { id: 12, cefr: "B1", words: ["I've", "been", "working", "on", "this", "for", "hours"], hint: "Я работаю над этим уже несколько часов" },
+  { id: 13, cefr: "B1", words: ["Let", "me", "get", "back", "to", "you", "on", "that"], hint: "Я вернусь к этому позже" },
+  { id: 14, cefr: "B1", words: ["That", "sounds", "like", "a", "great", "idea"], hint: "Это звучит как отличная идея" },
+  { id: 15, cefr: "B1", words: ["I", "used", "to", "live", "in", "a", "small", "town"], hint: "Раньше я жил в маленьком городе" },
+  { id: 16, cefr: "B1", words: ["How", "do", "you", "deal", "with", "stress"], hint: "Как вы справляетесь со стрессом?" },
   // B2
-  { id: 17, level: "B2", words: ["To", "be", "honest", "I", "don't", "know"], hint: "Честно говоря, я не знаю" },
-  { id: 18, level: "B2", words: ["In", "other", "words", "we", "need", "more", "time"], hint: "Другими словами, нам нужно больше времени" },
-  { id: 19, level: "B2", words: ["It", "goes", "without", "saying", "that", "practice", "is", "key"], hint: "Само собой разумеется, что практика — это ключ" },
-  { id: 20, level: "B2", words: ["Having", "said", "that", "we", "should", "still", "try"], hint: "Тем не менее, нам всё равно стоит попробовать" },
-  { id: 21, level: "B2", words: ["As", "far", "as", "I", "know", "the", "project", "is", "on", "track"], hint: "Насколько я знаю, проект идёт по плану" },
-  { id: 22, level: "B2", words: ["I", "couldn't", "agree", "more", "with", "that"], hint: "Я полностью с этим согласен" },
+  { id: 17, cefr: "B2", words: ["To", "be", "honest", "I", "don't", "know"], hint: "Честно говоря, я не знаю" },
+  { id: 18, cefr: "B2", words: ["In", "other", "words", "we", "need", "more", "time"], hint: "Другими словами, нам нужно больше времени" },
+  { id: 19, cefr: "B2", words: ["It", "goes", "without", "saying", "that", "practice", "is", "key"], hint: "Само собой разумеется, что практика — это ключ" },
+  { id: 20, cefr: "B2", words: ["Having", "said", "that", "we", "should", "still", "try"], hint: "Тем не менее, нам всё равно стоит попробовать" },
+  { id: 21, cefr: "B2", words: ["As", "far", "as", "I", "know", "the", "project", "is", "on", "track"], hint: "Насколько я знаю, проект идёт по плану" },
+  { id: 22, cefr: "B2", words: ["I", "couldn't", "agree", "more", "with", "that"], hint: "Я полностью с этим согласен" },
 ];
 
 function shuffleArr(arr) {
@@ -1009,32 +1009,32 @@ function BuilderModule() {
 
 const SHADOWING_TEXTS = [
   {
-    id: 1, level: "A2", topic: "Знакомство", duration: "~30 сек",
+    id: 1, cefr: "A2", topic: "Знакомство", duration: "~30 сек",
     text: "Hi! My name is Alex. I'm from Russia. I work in music production — I create songs using AI tools. It's a really exciting field right now. I've been learning English for a few months, and I'm making good progress. Nice to meet you!",
     focus: "Интонация приветствия, ритм простых предложений",
   },
   {
-    id: 2, level: "A2", topic: "Мой день", duration: "~35 сек",
+    id: 2, cefr: "A2", topic: "Мой день", duration: "~35 сек",
     text: "Every morning I wake up at eight o'clock. I make coffee and check my phone. Then I start working on my music projects. I usually spend about three hours creating new tracks. In the evening I watch videos in English to improve my listening skills.",
     focus: "Present Simple, ударения на ключевых словах",
   },
   {
-    id: 3, level: "B1", topic: "AI и музыка", duration: "~40 сек",
+    id: 3, cefr: "B1", topic: "AI и музыка", duration: "~40 сек",
     text: "Artificial intelligence is completely changing the music industry. Tools like Suno allow anyone to create professional-sounding tracks in minutes. What I find fascinating is how AI can figure out different musical styles and genres. I've been working with these tools for over a year now, and the results are incredible.",
     focus: "Фразовые глаголы, Present Perfect, беглость",
   },
   {
-    id: 4, level: "B1", topic: "Планы и цели", duration: "~40 сек",
+    id: 4, cefr: "B1", topic: "Планы и цели", duration: "~40 сек",
     text: "I'm going to focus on learning English this year because it opens so many doors. To be honest, I used to think it was too difficult, but now I realise it just takes consistency. If you practise every single day, even for twenty minutes, you'll make real progress. It depends on how committed you are.",
     focus: "Разговорные блоки, интонация уверенности",
   },
   {
-    id: 5, level: "B1", topic: "Технологии", duration: "~45 сек",
+    id: 5, cefr: "B1", topic: "Технологии", duration: "~45 сек",
     text: "The way we learn languages has changed dramatically. In the past, you had to find a native speaker or move abroad. Now you can practise with AI twenty-four hours a day. What I mean is — the barriers have completely broken down. Anyone can go ahead and start learning from anywhere in the world. It turns out that consistency matters more than expensive courses.",
     focus: "Фразы из карточек в живом тексте",
   },
   {
-    id: 6, level: "B2", topic: "Бизнес и творчество", duration: "~50 сек",
+    id: 6, cefr: "B2", topic: "Бизнес и творчество", duration: "~50 сек",
     text: "Building a creative business in the digital age requires both artistic vision and technical skills. Having said that, the most successful creators I've come across are those who come up with original ideas and deal with challenges without giving up. In other words, resilience matters as much as talent. It goes without saying that in today's market, you also need to set up a strong online presence.",
     focus: "B2 коллокации, естественный темп",
   },
@@ -1091,7 +1091,7 @@ function ShadowingModule() {
 
       {SHADOWING_TEXTS.map(t => {
         const done = completed.includes(t.id);
-        const levelColor = t.level === "A2" ? "#4488ff" : t.level === "B1" ? "#00ff88" : "#cc44ff";
+        const levelColor = t.cefr === "A2" ? "#4488ff" : t.level === "B1" ? "#00ff88" : "#cc44ff";
         return (
           <button key={t.id} onClick={() => { setSelected(t); setStep(0); setShowText(true); }}
             style={{ background: done ? "#0a1a0a" : "#0d1117", border: `1px solid ${done ? "#00ff8830" : "#ffffff12"}`, borderRadius: 14, padding: "16px 18px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}
