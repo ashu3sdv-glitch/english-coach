@@ -224,7 +224,7 @@ function todayKey() {
 function useSRS() {
   const [cards, setCards] = useState(() => {
     try {
-      const saved = localStorage.getItem("srs_cards_v3");
+      const saved = localStorage.getItem("srs_cards_v4");
       if (saved) return JSON.parse(saved);
     } catch {}
     return FREQ_WORDS.map((w, i) => ({
@@ -250,7 +250,7 @@ function useSRS() {
 
   useEffect(() => {
     try {
-      localStorage.setItem("srs_cards_v3", JSON.stringify(cards));
+      localStorage.setItem("srs_cards_v4", JSON.stringify(cards));
     } catch {}
   }, [cards]);
 
@@ -267,22 +267,20 @@ function useSRS() {
     const canUnlock = NEW_PER_DAY - unlockedToday;
     if (canUnlock <= 0) return;
     let unlocked = 0;
-    // Unlock in level order: A2 first, then B1, then B2
-    const levelOrder = ["A2", "B1", "B2"];
     setCards((prev) => {
       const next = [...prev];
-      for (const lvl of levelOrder) {
-        for (let i = 0; i < next.length && unlocked < canUnlock; i++) {
-          if (!next[i].unlocked && next[i].cefr === lvl) {
-            next[i] = { ...next[i], unlocked: true, nextReview: Date.now() };
-            unlocked++;
-          }
+      // Simple: just unlock first N locked cards in order
+      for (let i = 0; i < next.length && unlocked < canUnlock; i++) {
+        if (!next[i].unlocked) {
+          next[i] = { ...next[i], unlocked: true, nextReview: Date.now() };
+          unlocked++;
         }
-        if (unlocked >= canUnlock) break;
       }
       return next;
     });
-    setUnlockedToday((c) => c + unlocked);
+    if (unlocked > 0) {
+      setUnlockedToday((c) => c + unlocked);
+    }
   }, [unlockedToday]);
 
   const reviewCard = useCallback((id, quality) => {
@@ -809,7 +807,7 @@ function BuilderModule() {
   const [listened, setListened] = useState(false);
   const [shake, setShake] = useState(false);
 
-  const filtered = BUILDER_SENTENCES.filter(s => s.level === levelFilter);
+  const filtered = BUILDER_SENTENCES.filter(s => s.cefr === levelFilter);
 
   const loadNew = (excludeId) => {
     const pool = filtered.filter(s => s.id !== excludeId);
