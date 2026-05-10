@@ -115,22 +115,6 @@ const PLACEMENT_QUESTIONS = [
   { q: "What level describes you best?", options: ["Я почти не знаю английский (A1)", "Знаю базу, но говорю с трудом (A2)", "Могу объясниться, есть пробелы (B1)", "Говорю уверенно (B2+)"], correct: -1 },
 ];
 
-const SHADOWING_TEXTS = [
-  { id: 1, cefr: "A2", topic: "Знакомство", duration: "~30 сек", text: "Hi! My name is Alex. I'm from Russia. I work in music production — I create songs using AI tools. It's a really exciting field right now. I've been learning English for a few months, and I'm making good progress. Nice to meet you!", focus: "Интонация приветствия, ритм простых предложений" },
-  { id: 2, cefr: "A2", topic: "Мой день", duration: "~35 сек", text: "Every morning I wake up at eight o'clock. I make coffee and check my phone. Then I start working on my music projects. I usually spend about three hours creating new tracks. In the evening I watch videos in English to improve my listening skills.", focus: "Present Simple, ударения на ключевых словах" },
-  { id: 3, cefr: "B1", topic: "AI и музыка", duration: "~40 сек", text: "Artificial intelligence is completely changing the music industry. Tools like Suno allow anyone to create professional-sounding tracks in minutes. What I find fascinating is how AI can figure out different musical styles and genres. I've been working with these tools for over a year now, and the results are incredible.", focus: "Фразовые глаголы, Present Perfect, беглость" },
-  { id: 4, cefr: "B1", topic: "Планы и цели", duration: "~40 сек", text: "I'm going to focus on learning English this year because it opens so many doors. To be honest, I used to think it was too difficult, but now I realise it just takes consistency. If you practise every single day, even for twenty minutes, you'll make real progress. It depends on how committed you are.", focus: "Разговорные блоки, интонация уверенности" },
-  { id: 5, cefr: "B1", topic: "Технологии", duration: "~45 сек", text: "The way we learn languages has changed dramatically. In the past, you had to find a native speaker or move abroad. Now you can practise with AI twenty-four hours a day. What I mean is — the barriers have completely broken down. Anyone can go ahead and start learning from anywhere in the world. It turns out that consistency matters more than expensive courses.", focus: "Фразы из карточек в живом тексте" },
-  { id: 6, cefr: "B2", topic: "Бизнес и творчество", duration: "~50 сек", text: "Building a creative business in the digital age requires both artistic vision and technical skills. Having said that, the most successful creators I've come across are those who come up with original ideas and deal with challenges without giving up. In other words, resilience matters as much as talent. It goes without saying that in today's market, you also need to set up a strong online presence.", focus: "B2 коллокации, естественный темп" },
-];
-
-const SHADOWING_STEPS = [
-  { id: 1, icon: "👂", label: "Слушай", desc: "Прослушай текст целиком — просто знакомься, не повторяй" },
-  { id: 2, icon: "👄", label: "Шёпот", desc: "Слушай и шёпотом повторяй вслед — без текста" },
-  { id: 3, icon: "🗣️", label: "Вслух", desc: "Читай текст и говори одновременно с озвучкой" },
-  { id: 4, icon: "⚡", label: "Без текста", desc: "Закрой текст — говори только на слух" },
-];
-
 const BUILDER_SENTENCES = [
   { id: 1, cefr: "A2", words: ["I", "get", "up", "at", "7"], hint: "Я встаю в 7" },
   { id: 2, cefr: "A2", words: ["I", "make", "coffee", "every", "morning"], hint: "Я делаю кофе каждое утро" },
@@ -729,93 +713,6 @@ function BuilderModule() {
   );
 }
 
-// ─── SHADOWING MODULE ─────────────────────────────────────────────────────────
-
-function ShadowingModule() {
-  const [selected, setSelected] = useState(null);
-  const [step, setStep] = useState(0);
-  const [speaking, setSpeaking] = useState(false);
-  const [showText, setShowText] = useState(true);
-  const [completed, setCompleted] = useState([]);
-
-  const speak = (text, rate = 0.8) => {
-    setSpeaking(true);
-    speakText(text, rate);
-    const est = (text.split(" ").length / 2.5) * 1000;
-    setTimeout(() => setSpeaking(false), est);
-  };
-
-  const handleStep = (s) => {
-    setStep(s);
-    setShowText(s !== 3);
-    stopSpeak();
-    if (s === 0 || s === 1) setTimeout(() => speak(selected.text, s === 0 ? 0.75 : 0.8), 300);
-  };
-
-  const finish = () => { setCompleted(prev => [...new Set([...prev, selected.id])]); setSelected(null); setStep(0); stopSpeak(); };
-
-  if (!selected) return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div style={{ color: "#888", fontSize: 13, lineHeight: 1.7 }}>Shadowing — повторяй вслед за носителем с той же интонацией.<br /><span style={{ color: "#555", fontSize: 11 }}>Выбери текст и следуй 4 шагам.</span></div>
-      {SHADOWING_TEXTS.map(t => {
-        const done = completed.includes(t.id);
-        const lc = t.cefr === "A2" ? "#4488ff" : t.cefr === "B1" ? "#00ff88" : "#cc44ff";
-        return (
-          <button key={t.id} onClick={() => { setSelected(t); setStep(0); setShowText(true); }} style={{ background: done ? "#0a1a0a" : "#0d1117", border: `1px solid ${done ? "#00ff8830" : "#ffffff12"}`, borderRadius: 14, padding: "14px 16px", cursor: "pointer", textAlign: "left" }}
-            onMouseOver={e => e.currentTarget.style.border = `1px solid ${lc}50`} onMouseOut={e => e.currentTarget.style.border = `1px solid ${done ? "#00ff8830" : "#ffffff12"}`}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-              <span style={{ background: lc + "20", color: lc, borderRadius: 6, padding: "2px 8px", fontSize: 10, fontWeight: 700 }}>{t.cefr}</span>
-              <span style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{t.topic}</span>
-              <span style={{ color: "#444", fontSize: 11, marginLeft: "auto" }}>{t.duration}</span>
-              {done && <span style={{ color: "#00ff88", fontSize: 12 }}>✓</span>}
-            </div>
-            <div style={{ color: "#555", fontSize: 11 }}>Фокус: {t.focus}</div>
-          </button>
-        );
-      })}
-    </div>
-  );
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <button onClick={() => { setSelected(null); stopSpeak(); }} style={{ background: "none", border: "1px solid #333", color: "#888", borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontSize: 12 }}>← тексты</button>
-        <span style={{ color: "#fff", fontWeight: 700 }}>{selected.topic}</span>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
-        {SHADOWING_STEPS.map((s, i) => (
-          <button key={i} onClick={() => handleStep(i)} style={{ background: step === i ? "#00ff8815" : "#0d1117", border: `1px solid ${step === i ? "#00ff8850" : "#ffffff10"}`, borderRadius: 12, padding: "10px 6px", cursor: "pointer", textAlign: "center" }}>
-            <div style={{ fontSize: 20, marginBottom: 4 }}>{s.icon}</div>
-            <div style={{ color: step === i ? "#00ff88" : "#888", fontSize: 11, fontWeight: 700 }}>{s.label}</div>
-          </button>
-        ))}
-      </div>
-      <div style={{ background: "#0a1a0a", border: "1px solid #00ff8820", borderRadius: 12, padding: "10px 14px", fontSize: 12, color: "#aaa" }}>
-        <b style={{ color: "#00ff88" }}>Шаг {step + 1}: {SHADOWING_STEPS[step].label}</b> — {SHADOWING_STEPS[step].desc}
-      </div>
-      <div style={{ background: "#0d1117", border: "1px solid #ffffff10", borderRadius: 16, padding: "18px", lineHeight: 2, fontSize: 15, color: showText ? "#ddd" : "#1a1a2a", transition: "color 0.3s", position: "relative", minHeight: 100 }}>
-        {selected.text}
-        {!showText && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#333", fontSize: 13 }}>Текст скрыт — говори на слух 🎧</div>}
-      </div>
-      <div style={{ display: "flex", gap: 10 }}>
-        <button onClick={() => speak(selected.text, step === 0 ? 0.7 : 0.85)} disabled={speaking} style={{ flex: 1, background: speaking ? "#1a2a1a" : "linear-gradient(135deg,#004488,#002244)", border: "none", borderRadius: 12, padding: "11px", color: speaking ? "#00ff88" : "#4488ff", fontWeight: 700, cursor: speaking ? "not-allowed" : "pointer", fontSize: 13 }}>
-          {speaking ? "🔊 Играет..." : "▶ Прослушать"}
-        </button>
-        <button onClick={stopSpeak} style={{ background: "#1a0a0a", border: "1px solid #ff444440", borderRadius: 12, padding: "11px 14px", color: "#ff4444", cursor: "pointer", fontSize: 13 }}>⏹</button>
-        <button onClick={() => setShowText(s => !s)} style={{ background: "#0d1117", border: "1px solid #ffffff15", borderRadius: 12, padding: "11px 14px", color: "#888", cursor: "pointer", fontSize: 13 }}>{showText ? "🙈" : "👁️"}</button>
-      </div>
-      <div style={{ display: "flex", gap: 10 }}>
-        {step > 0 && <button onClick={() => handleStep(step - 1)} style={{ flex: 1, background: "#0d1117", border: "1px solid #ffffff15", borderRadius: 12, padding: "11px", color: "#888", cursor: "pointer", fontSize: 12 }}>← Назад</button>}
-        {step < 3 ? (
-          <button onClick={() => handleStep(step + 1)} style={{ flex: 2, background: "linear-gradient(135deg,#00cc66,#008844)", border: "none", borderRadius: 12, padding: "11px", color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>Следующий шаг →</button>
-        ) : (
-          <button onClick={finish} style={{ flex: 2, background: "linear-gradient(135deg,#00cc66,#008844)", border: "none", borderRadius: 12, padding: "11px", color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>✓ Готово!</button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ─── READING MODULE ───────────────────────────────────────────────────────────
 
 function highlightPhrases(text, words) {
@@ -845,6 +742,8 @@ function ReadingModule({ studiedCards }) {
   const [story, setStory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activePhrase, setActivePhrase] = useState(null);
+  const [shadowMode, setShadowMode] = useState(false);
+  const [shadowStep, setShadowStep] = useState(0);
 
   const wordsToUse = studiedCards && studiedCards.length >= 4 ? studiedCards : null;
 
@@ -852,6 +751,9 @@ function ReadingModule({ studiedCards }) {
     setTopic(t);
     setStory(null);
     setActivePhrase(null);
+    setShadowMode(false);
+    setShadowStep(0);
+    stopSpeak();
     setLoading(true);
     const s = await generateStory(wordsToUse, t.label);
     setStory(s);
@@ -938,6 +840,52 @@ function ReadingModule({ studiedCards }) {
               {foundPhrases.map(p => <span key={p.word} onClick={() => handlePhraseClick(p)} style={{ background: "#cc44ff15", border: "1px solid #cc44ff30", borderRadius: 8, padding: "3px 9px", fontSize: 11, color: "#cc88ff", cursor: "pointer" }}>{p.word}</span>)}
             </div>
           </div>
+
+          {/* Shadowing mode */}
+          {!shadowMode ? (
+            <button onClick={() => setShadowMode(true)} style={{ background: "linear-gradient(135deg,#1a0a2a,#0d0617)", border: "1px solid #cc44ff40", borderRadius: 14, padding: "12px", color: "#cc88ff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+              🎙️ Включить режим Shadowing
+            </button>
+          ) : (
+            <div style={{ background: "linear-gradient(135deg,#0d0617,#1a0a2a)", border: "1px solid #cc44ff40", borderRadius: 16, padding: "16px 18px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <span style={{ color: "#cc88ff", fontWeight: 700, fontSize: 14 }}>🎙️ Режим Shadowing</span>
+                <button onClick={() => { setShadowMode(false); setShadowStep(0); stopSpeak(); }} style={{ marginLeft: "auto", background: "none", border: "1px solid #333", color: "#555", borderRadius: 8, padding: "3px 10px", cursor: "pointer", fontSize: 11 }}>✕ выйти</button>
+              </div>
+
+              {/* Steps */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
+                {[
+                  { icon: "👂", label: "Слушай", desc: "Слушаешь целиком — не повторяй" },
+                  { icon: "👄", label: "Шёпот", desc: "Слушай и тихо повторяй вслед" },
+                  { icon: "🗣️", label: "Вслух", desc: "Говори одновременно с озвучкой" },
+                  { icon: "⚡", label: "Без текста", desc: "Только на слух" },
+                ].map((s, i) => (
+                  <button key={i} onClick={() => { setShadowStep(i); stopSpeak(); if (i === 0 || i === 1) setTimeout(() => speakText(story, i === 0 ? 0.7 : 0.8), 200); }}
+                    style={{ background: shadowStep === i ? "#cc44ff20" : "#0d1117", border: `1px solid ${shadowStep === i ? "#cc44ff60" : "#ffffff10"}`, borderRadius: 10, padding: "8px 4px", cursor: "pointer", textAlign: "center" }}>
+                    <div style={{ fontSize: 18, marginBottom: 3 }}>{s.icon}</div>
+                    <div style={{ color: shadowStep === i ? "#cc88ff" : "#666", fontSize: 10, fontWeight: 700 }}>{s.label}</div>
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ background: "#0a0a1a", border: "1px solid #cc44ff20", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#aaa", marginBottom: 12 }}>
+                {[
+                  "👂 Нажми ▶ и просто слушай — знакомься с текстом",
+                  "👄 Нажми ▶ и шёпотом повторяй вслед за голосом",
+                  "🗣️ Нажми ▶ и говори вслух одновременно с озвучкой",
+                  "⚡ Говори по памяти — текст скрыт, только звук",
+                ][shadowStep]}
+              </div>
+
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => { speakText(story, shadowStep === 0 ? 0.7 : 0.8); }}
+                  style={{ flex: 1, background: "#cc44ff20", border: "1px solid #cc44ff40", borderRadius: 10, padding: "10px", color: "#cc88ff", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>▶ Запустить</button>
+                <button onClick={stopSpeak} style={{ background: "#1a0a0a", border: "1px solid #ff444430", borderRadius: 10, padding: "10px 14px", color: "#ff6666", cursor: "pointer", fontSize: 13 }}>⏹</button>
+                <button onClick={() => speakText(story, 0.55)} style={{ background: "#0a1a0a", border: "1px solid #00ff8820", borderRadius: 10, padding: "10px 12px", color: "#00ff8870", cursor: "pointer", fontSize: 11 }}>🐢</button>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -1379,7 +1327,6 @@ export default function App() {
     { id: "quiz", label: "Игра", icon: "🎮", locked: isLocked },
     { id: "builder", label: "Сборка", icon: "🔤", locked: isLocked },
     { id: "reading", label: "Текст", icon: "📖", locked: isLocked },
-    { id: "shadow", label: "Тень", icon: "🎙️" },
     { id: "diary", label: "Дневник", icon: "✍️" },
     { id: "news", label: "Новости", icon: "📰" },
     { id: "chat", label: "Диалог", icon: "🗣️" },
@@ -1428,7 +1375,7 @@ export default function App() {
 
       {/* Tabs */}
       <div style={{ maxWidth: 600, margin: "0 auto", padding: "12px 16px 0" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(9,1fr)", gap: 4, marginBottom: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(8,1fr)", gap: 4, marginBottom: 20 }}>
           {tabs.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{ background: tab === t.id ? "linear-gradient(135deg,#00cc66,#008844)" : "#0d1117", border: tab === t.id ? "none" : "1px solid #ffffff10", borderRadius: 10, padding: "8px 2px", cursor: "pointer", color: tab === t.id ? "#fff" : t.locked ? "#2a2a2a" : "#555", fontSize: 9, fontWeight: 700, transition: "all 0.2s", position: "relative" }}>
               <div style={{ fontSize: 14, marginBottom: 2 }}>{t.icon}</div>
@@ -1443,7 +1390,6 @@ export default function App() {
           {tab === "quiz" && <QuizModule studiedCards={studiedCards} />}
           {tab === "builder" && <BuilderModule />}
           {tab === "reading" && <ReadingModule studiedCards={studiedCards} />}
-          {tab === "shadow" && <ShadowingModule />}
           {tab === "diary" && <DiaryModule />}
           {tab === "news" && <NewsModule />}
           {tab === "chat" && <ChatModule />}
