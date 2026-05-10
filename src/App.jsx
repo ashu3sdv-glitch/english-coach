@@ -3,102 +3,96 @@ import { useState, useEffect, useRef, useCallback } from "react";
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
 const ALL_PHRASES = [
-  // ── A2: ЗНАКОМСТВО И БАЗОВОЕ ОБЩЕНИЕ ─────────────────────────────────────
-  { word: "Nice to meet you", transcription: "/naɪs tə miːt juː/", translation: "Приятно познакомиться", example: "Hi, I'm Alex. Nice to meet you!", cefr: "A2", category: "Знакомство" },
-  { word: "Where are you from?", transcription: "/wɛr ɑːr juː frɒm/", translation: "Откуда вы?", example: "Where are you from? — I'm from Russia.", cefr: "A2", category: "Знакомство" },
-  { word: "What do you do?", transcription: "/wɒt duː juː duː/", translation: "Чем вы занимаетесь?", example: "What do you do? — I work in music production.", cefr: "A2", category: "Знакомство" },
-  { word: "How long have you been learning English?", transcription: "/haʊ lɒŋ həv juː bɪn ˈlɜːrnɪŋ/", translation: "Как давно вы учите английский?", example: "How long have you been learning English? — About 3 months.", cefr: "A2", category: "Знакомство" },
-  { word: "My English isn't perfect", transcription: "/maɪ ˈɪŋɡlɪʃ ɪznt ˈpɜːrfɪkt/", translation: "Мой английский не идеален", example: "My English isn't perfect, but I'm working on it!", cefr: "A2", category: "Знакомство" },
-  { word: "Could you speak slower?", transcription: "/kʊd juː spiːk ˈsloʊər/", translation: "Не могли бы вы говорить медленнее?", example: "Could you speak slower, please? I'm still learning.", cefr: "A2", category: "Знакомство" },
-  { word: "Could you repeat that?", transcription: "/kʊd juː rɪˈpiːt ðæt/", translation: "Не могли бы вы повторить?", example: "Sorry, could you repeat that?", cefr: "A2", category: "Знакомство" },
-  { word: "What do you mean?", transcription: "/wɒt duː juː miːn/", translation: "Что вы имеете в виду?", example: "What do you mean by that?", cefr: "A2", category: "Знакомство" },
-  { word: "That's interesting!", transcription: "/ðæts ˈɪntrəstɪŋ/", translation: "Это интересно!", example: "That's interesting! Tell me more.", cefr: "A2", category: "Знакомство" },
+  // ── A2: МОЙ ДЕНЬ (короткие бытовые фразы) ────────────────────────────────
+  { word: "I get up at 7", transcription: "/aɪ ɡɛt ʌp æt ˈsɛvən/", translation: "Я встаю в 7", example: "I get up at 7 every day.", cefr: "A2", category: "Мой день" },
+  { word: "I make coffee", transcription: "/aɪ meɪk ˈkɒfi/", translation: "Я делаю кофе", example: "I make coffee every morning.", cefr: "A2", category: "Мой день" },
+  { word: "I check my phone", transcription: "/aɪ tʃɛk maɪ foʊn/", translation: "Я проверяю телефон", example: "I check my phone when I wake up.", cefr: "A2", category: "Мой день" },
+  { word: "I start working", transcription: "/aɪ stɑːrt ˈwɜːrkɪŋ/", translation: "Я начинаю работать", example: "I start working at 9.", cefr: "A2", category: "Мой день" },
+  { word: "I have lunch", transcription: "/aɪ hæv lʌntʃ/", translation: "Я обедаю", example: "I have lunch at 1 pm.", cefr: "A2", category: "Мой день" },
+  { word: "I feel tired", transcription: "/aɪ fiːl ˈtaɪərd/", translation: "Я устал", example: "I feel tired after work.", cefr: "A2", category: "Мой день" },
+  { word: "I go to bed", transcription: "/aɪ ɡoʊ tə bɛd/", translation: "Я иду спать", example: "I go to bed at 11.", cefr: "A2", category: "Мой день" },
+  { word: "I brush my teeth", transcription: "/aɪ brʌʃ maɪ tiːθ/", translation: "Я чищу зубы", example: "I brush my teeth twice a day.", cefr: "A2", category: "Мой день" },
+  { word: "I take a shower", transcription: "/aɪ teɪk ə ˈʃaʊər/", translation: "Я принимаю душ", example: "I take a shower in the morning.", cefr: "A2", category: "Мой день" },
+  { word: "I have breakfast", transcription: "/aɪ hæv ˈbrɛkfəst/", translation: "Я завтракаю", example: "I have breakfast at 8.", cefr: "A2", category: "Мой день" },
 
-  // ── A2: ПОВСЕДНЕВНЫЕ СИТУАЦИИ ─────────────────────────────────────────────
-  { word: "I'd like to order", transcription: "/aɪd laɪk tə ˈɔːrdər/", translation: "Я бы хотел заказать", example: "I'd like to order the chicken salad, please.", cefr: "A2", category: "Быт" },
-  { word: "How much does it cost?", transcription: "/haʊ mʌtʃ dʌz ɪt kɒst/", translation: "Сколько это стоит?", example: "Excuse me, how much does it cost?", cefr: "A2", category: "Быт" },
-  { word: "Can I pay by card?", transcription: "/kæn aɪ peɪ baɪ kɑːrd/", translation: "Можно оплатить картой?", example: "Can I pay by card or is it cash only?", cefr: "A2", category: "Быт" },
-  { word: "I'm looking for", transcription: "/aɪm ˈlʊkɪŋ fɔːr/", translation: "Я ищу", example: "I'm looking for the nearest pharmacy.", cefr: "A2", category: "Быт" },
-  { word: "Excuse me, where is", transcription: "/ɪkˈskjuːz miː wɛr ɪz/", translation: "Извините, где находится", example: "Excuse me, where is the train station?", cefr: "A2", category: "Быт" },
-  { word: "Can you help me?", transcription: "/kæn juː hɛlp miː/", translation: "Вы можете мне помочь?", example: "Can you help me find this address?", cefr: "A2", category: "Быт" },
-  { word: "I need to reschedule", transcription: "/aɪ niːd tə ˌriːˈskɛdʒuːl/", translation: "Мне нужно перенести встречу", example: "I need to reschedule our meeting to Friday.", cefr: "A2", category: "Быт" },
-  { word: "Sorry I'm late", transcription: "/ˈsɒri aɪm leɪt/", translation: "Извините, я опоздал", example: "Sorry I'm late, there was a lot of traffic.", cefr: "A2", category: "Быт" },
-  { word: "It was great talking to you", transcription: "/ɪt wɒz ɡreɪt ˈtɔːkɪŋ tə juː/", translation: "Было приятно пообщаться", example: "It was great talking to you! See you next time.", cefr: "A2", category: "Быт" },
+  // ── A2: БАЗОВОЕ ОБЩЕНИЕ (короткие) ───────────────────────────────────────
+  { word: "Nice to meet you", transcription: "/naɪs tə miːt juː/", translation: "Приятно познакомиться", example: "Hi, I'm Alex. Nice to meet you!", cefr: "A2", category: "Общение" },
+  { word: "Where are you from?", transcription: "/wɛr ɑːr juː frɒm/", translation: "Откуда ты?", example: "Where are you from? — Russia.", cefr: "A2", category: "Общение" },
+  { word: "What do you do?", transcription: "/wɒt duː juː duː/", translation: "Чем занимаешься?", example: "What do you do? — I make music.", cefr: "A2", category: "Общение" },
+  { word: "Say that again?", transcription: "/seɪ ðæt əˈɡɛn/", translation: "Повтори?", example: "Sorry, say that again?", cefr: "A2", category: "Общение" },
+  { word: "Speak slowly please", transcription: "/spiːk ˈsloʊli pliːz/", translation: "Говори медленно", example: "Can you speak slowly please?", cefr: "A2", category: "Общение" },
+  { word: "I don't understand", transcription: "/aɪ doʊnt ˌʌndəˈstænd/", translation: "Я не понимаю", example: "Sorry, I don't understand.", cefr: "A2", category: "Общение" },
+  { word: "What does it mean?", transcription: "/wɒt dʌz ɪt miːn/", translation: "Что это значит?", example: "What does it mean?", cefr: "A2", category: "Общение" },
+  { word: "That's interesting", transcription: "/ðæts ˈɪntrəstɪŋ/", translation: "Интересно!", example: "That's interesting! Tell me more.", cefr: "A2", category: "Общение" },
 
-  // ── A2: БАЗОВЫЕ ПАТТЕРНЫ ──────────────────────────────────────────────────
+  // ── A2: БЫТ ──────────────────────────────────────────────────────────────
+  { word: "Can I have the bill?", transcription: "/kæn aɪ hæv ðə bɪl/", translation: "Счёт пожалуйста", example: "Can I have the bill please?", cefr: "A2", category: "Быт" },
+  { word: "How much is it?", transcription: "/haʊ mʌtʃ ɪz ɪt/", translation: "Сколько стоит?", example: "How much is it?", cefr: "A2", category: "Быт" },
+  { word: "Can I pay by card?", transcription: "/kæn aɪ peɪ baɪ kɑːrd/", translation: "Можно картой?", example: "Can I pay by card?", cefr: "A2", category: "Быт" },
+  { word: "Where is it?", transcription: "/wɛr ɪz ɪt/", translation: "Где это?", example: "Excuse me, where is it?", cefr: "A2", category: "Быт" },
+  { word: "I need help", transcription: "/aɪ niːd hɛlp/", translation: "Мне нужна помощь", example: "Excuse me, I need help.", cefr: "A2", category: "Быт" },
+  { word: "Sorry I'm late", transcription: "/ˈsɒri aɪm leɪt/", translation: "Извини, опоздал", example: "Sorry I'm late!", cefr: "A2", category: "Быт" },
+
+  // ── A2: ПАТТЕРНЫ (короткие) ──────────────────────────────────────────────
   { word: "I'm working on it", transcription: "/aɪm ˈwɜːrkɪŋ ɒn ɪt/", translation: "Я работаю над этим", example: "Don't worry, I'm working on it.", cefr: "A2", category: "Паттерны" },
-  { word: "I'm going to", transcription: "/aɪm ˈɡoʊɪŋ tə/", translation: "Я собираюсь", example: "I'm going to learn English this year.", cefr: "A2", category: "Паттерны" },
+  { word: "I'm going to", transcription: "/aɪm ˈɡoʊɪŋ tə/", translation: "Я собираюсь", example: "I'm going to learn English.", cefr: "A2", category: "Паттерны" },
   { word: "I want to", transcription: "/aɪ wɒnt tə/", translation: "Я хочу", example: "I want to improve my English.", cefr: "A2", category: "Паттерны" },
-  { word: "I need to", transcription: "/aɪ niːd tə/", translation: "Мне нужно", example: "I need to call him back.", cefr: "A2", category: "Паттерны" },
-  { word: "I can't", transcription: "/aɪ kɑːnt/", translation: "Я не могу", example: "I can't make it tonight, sorry.", cefr: "A2", category: "Паттерны" },
-  { word: "I think that", transcription: "/aɪ θɪŋk ðæt/", translation: "Я думаю, что", example: "I think that you're right.", cefr: "A2", category: "Паттерны" },
-  { word: "There is / There are", transcription: "/ðɛr ɪz / ðɛr ɑːr/", translation: "Есть / Имеется", example: "There is a problem we need to discuss.", cefr: "A2", category: "Паттерны" },
-  { word: "It's easy to", transcription: "/ɪts ˈiːzi tə/", translation: "Легко / Несложно", example: "It's easy to get lost in this city.", cefr: "A2", category: "Паттерны" },
-
-  // ── B1: РАЗГОВОРНЫЕ БЛОКИ ─────────────────────────────────────────────────
-  { word: "In my opinion", transcription: "/ɪn maɪ əˈpɪnjən/", translation: "На мой взгляд", example: "In my opinion, this is the best approach.", cefr: "B1", category: "Мнение" },
-  { word: "Actually, I'm not sure", transcription: "/ˈæktʃuəli aɪm nɒt ʃʊər/", translation: "Честно говоря, я не уверен", example: "Actually, I'm not sure about that.", cefr: "B1", category: "Мнение" },
-  { word: "That's a good point", transcription: "/ðæts ə ɡʊd pɔɪnt/", translation: "Это хорошее замечание", example: "That's a good point. I agree with you.", cefr: "B1", category: "Мнение" },
-  { word: "Let me think about it", transcription: "/lɛt miː θɪŋk əˈbaʊt ɪt/", translation: "Дайте мне подумать", example: "Let me think about it for a second.", cefr: "B1", category: "Мнение" },
-  { word: "I see your point, but", transcription: "/aɪ siː jɔːr pɔɪnt bʌt/", translation: "Я понимаю вашу точку зрения, но", example: "I see your point, but I disagree.", cefr: "B1", category: "Мнение" },
-  { word: "So what you're saying is", transcription: "/soʊ wɒt jʊər ˈseɪɪŋ ɪz/", translation: "Итак, вы говорите, что", example: "So what you're saying is we need more time?", cefr: "B1", category: "Мнение" },
-  { word: "By the way", transcription: "/baɪ ðə weɪ/", translation: "Кстати", example: "By the way, have you heard the news?", cefr: "B1", category: "Мнение" },
-  { word: "Anyway, getting back to", transcription: "/ˈɛniweɪ ˈɡɛtɪŋ bæk tə/", translation: "В общем, возвращаясь к теме", example: "Anyway, getting back to the main topic.", cefr: "B1", category: "Мнение" },
+  { word: "I need to", transcription: "/aɪ niːd tə/", translation: "Мне нужно", example: "I need to call him.", cefr: "A2", category: "Паттерны" },
+  { word: "I think so", transcription: "/aɪ θɪŋk soʊ/", translation: "Я думаю да", example: "Is it good? — I think so.", cefr: "A2", category: "Паттерны" },
+  { word: "I'm not sure", transcription: "/aɪm nɒt ʃʊər/", translation: "Я не уверен", example: "I'm not sure about that.", cefr: "A2", category: "Паттерны" },
 
   // ── B1: ФРАЗОВЫЕ ГЛАГОЛЫ ─────────────────────────────────────────────────
-  { word: "go ahead", transcription: "/ɡoʊ əˈhɛd/", translation: "продолжай / давай", example: "Go ahead, I'm listening.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "go through", transcription: "/ɡoʊ θruː/", translation: "пережить / пройти через", example: "We went through a tough time.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "figure out", transcription: "/ˈfɪɡjər aʊt/", translation: "разобраться / понять", example: "I need to figure out this problem.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "come up with", transcription: "/kʌm ʌp wɪð/", translation: "придумать / предложить", example: "She came up with a great idea.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "get along", transcription: "/ɡɛt əˈlɒŋ/", translation: "ладить / уживаться", example: "We get along very well.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "put off", transcription: "/pʊt ɒf/", translation: "откладывать", example: "Don't put off until tomorrow.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "break down", transcription: "/breɪk daʊn/", translation: "сломаться / расстроиться", example: "My car broke down this morning.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "turn out", transcription: "/tɜːrn aʊt/", translation: "оказаться / выясниться", example: "It turned out to be a great day.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "bring up", transcription: "/brɪŋ ʌp/", translation: "поднять тему / воспитать", example: "He brought up an interesting point.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "set up", transcription: "/sɛt ʌp/", translation: "настроить / организовать", example: "Let's set up a meeting.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "deal with", transcription: "/diːl wɪð/", translation: "справляться / разбираться", example: "How do you deal with stress?", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "look forward to", transcription: "/lʊk ˈfɔːrwərd tuː/", translation: "с нетерпением ждать", example: "I look forward to meeting you.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "pick up", transcription: "/pɪk ʌp/", translation: "подхватить / забрать / освоить", example: "I picked up some English from movies.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "run out of", transcription: "/rʌn aʊt əv/", translation: "закончиться / исчерпать", example: "We ran out of time.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "look into", transcription: "/lʊk ˈɪntə/", translation: "изучить / исследовать", example: "I'll look into this issue.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "give up", transcription: "/ɡɪv ʌp/", translation: "сдаться / бросить", example: "Don't give up on your English!", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "take over", transcription: "/teɪk ˈoʊvər/", translation: "взять на себя / захватить", example: "She took over the project last week.", cefr: "B1", category: "Фразовые глаголы" },
-  { word: "end up", transcription: "/ɛnd ʌp/", translation: "в итоге оказаться", example: "We ended up staying till midnight.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "go ahead", transcription: "/ɡoʊ əˈhɛd/", translation: "давай / продолжай", example: "Go ahead, I'm listening.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "figure out", transcription: "/ˈfɪɡjər aʊt/", translation: "разобраться", example: "I need to figure it out.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "come up with", transcription: "/kʌm ʌp wɪð/", translation: "придумать", example: "She came up with a great idea.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "get along", transcription: "/ɡɛt əˈlɒŋ/", translation: "ладить", example: "We get along well.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "put off", transcription: "/pʊt ɒf/", translation: "откладывать", example: "Don't put it off.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "break down", transcription: "/breɪk daʊn/", translation: "сломаться", example: "My car broke down.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "turn out", transcription: "/tɜːrn aʊt/", translation: "оказаться", example: "It turned out great.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "bring up", transcription: "/brɪŋ ʌp/", translation: "поднять тему", example: "He brought it up.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "set up", transcription: "/sɛt ʌp/", translation: "организовать", example: "Let's set it up.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "deal with", transcription: "/diːl wɪð/", translation: "разбираться", example: "How do you deal with it?", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "pick up", transcription: "/pɪk ʌp/", translation: "освоить / забрать", example: "I picked it up fast.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "run out of", transcription: "/rʌn aʊt əv/", translation: "закончиться", example: "We ran out of time.", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "give up", transcription: "/ɡɪv ʌp/", translation: "сдаться", example: "Don't give up!", cefr: "B1", category: "Фразовые глаголы" },
+  { word: "end up", transcription: "/ɛnd ʌp/", translation: "в итоге", example: "We ended up staying late.", cefr: "B1", category: "Фразовые глаголы" },
 
-  // ── B1: ПАТТЕРНЫ И ГРАММАТИКА ────────────────────────────────────────────
-  { word: "I've been working", transcription: "/aɪv bɪn ˈwɜːrkɪŋ/", translation: "я работаю (уже какое-то время)", example: "I've been working on this for hours.", cefr: "B1", category: "Грамматика" },
-  { word: "I used to", transcription: "/aɪ juːzd tə/", translation: "раньше я / бывало я", example: "I used to live in a small town.", cefr: "B1", category: "Грамматика" },
-  { word: "I should have", transcription: "/aɪ ʃʊd həv/", translation: "мне следовало бы", example: "I should have called you earlier.", cefr: "B1", category: "Грамматика" },
-  { word: "If I were you", transcription: "/ɪf aɪ wɜːr juː/", translation: "Если бы я был на вашем месте", example: "If I were you, I'd try again.", cefr: "B1", category: "Грамматика" },
-  { word: "I'd rather", transcription: "/aɪd ˈrɑːðər/", translation: "Я бы предпочёл", example: "I'd rather stay home tonight.", cefr: "B1", category: "Грамматика" },
-  { word: "It depends on", transcription: "/ɪt dɪˈpɛndz ɒn/", translation: "Это зависит от", example: "It depends on the weather.", cefr: "B1", category: "Грамматика" },
+  // ── B1: РАЗГОВОР ─────────────────────────────────────────────────────────
+  { word: "In my opinion", transcription: "/ɪn maɪ əˈpɪnjən/", translation: "На мой взгляд", example: "In my opinion, it's great.", cefr: "B1", category: "Разговор" },
+  { word: "I'm not sure", transcription: "/aɪm nɒt ʃʊər/", translation: "Не уверен", example: "I'm not sure about that.", cefr: "B1", category: "Разговор" },
+  { word: "Good point", transcription: "/ɡʊd pɔɪnt/", translation: "Хорошее замечание", example: "Good point, I agree.", cefr: "B1", category: "Разговор" },
+  { word: "Let me think", transcription: "/lɛt miː θɪŋk/", translation: "Дай подумаю", example: "Let me think for a second.", cefr: "B1", category: "Разговор" },
+  { word: "I see your point", transcription: "/aɪ siː jɔːr pɔɪnt/", translation: "Понимаю тебя", example: "I see your point, but...", cefr: "B1", category: "Разговор" },
+  { word: "By the way", transcription: "/baɪ ðə weɪ/", translation: "Кстати", example: "By the way, did you hear?", cefr: "B1", category: "Разговор" },
+  { word: "Anyway", transcription: "/ˈɛniweɪ/", translation: "В общем / ладно", example: "Anyway, let's move on.", cefr: "B1", category: "Разговор" },
+  { word: "I've been working", transcription: "/aɪv bɪn ˈwɜːrkɪŋ/", translation: "Я работаю (уже)", example: "I've been working all day.", cefr: "B1", category: "Разговор" },
+  { word: "I used to", transcription: "/aɪ juːzd tə/", translation: "Раньше я", example: "I used to live there.", cefr: "B1", category: "Разговор" },
+  { word: "It depends", transcription: "/ɪt dɪˈpɛndz/", translation: "Зависит", example: "It depends on the weather.", cefr: "B1", category: "Разговор" },
+  { word: "Let me get back to you", transcription: "/lɛt miː ɡɛt bæk tə juː/", translation: "Отвечу позже", example: "Let me get back to you.", cefr: "B1", category: "Разговор" },
+  { word: "That sounds great", transcription: "/ðæt saʊndz ɡreɪt/", translation: "Звучит отлично", example: "That sounds great!", cefr: "B1", category: "Разговор" },
 
-  // ── B1: РАБОТА И БИЗНЕС ──────────────────────────────────────────────────
-  { word: "I'm working on a project", transcription: "/aɪm ˈwɜːrkɪŋ ɒn ə ˈprɒdʒɛkt/", translation: "Я работаю над проектом", example: "I'm working on a project related to AI music.", cefr: "B1", category: "Работа" },
-  { word: "Let me get back to you", transcription: "/lɛt miː ɡɛt bæk tə juː/", translation: "Я вернусь к этому позже", example: "Let me get back to you on that tomorrow.", cefr: "B1", category: "Работа" },
-  { word: "Could you send me the details?", transcription: "/kʊd juː sɛnd miː ðə ˈdiːteɪlz/", translation: "Не могли бы вы прислать детали?", example: "Could you send me the details by email?", cefr: "B1", category: "Работа" },
-  { word: "I appreciate your help", transcription: "/aɪ əˈpriːʃieɪt jɔːr hɛlp/", translation: "Я ценю вашу помощь", example: "I appreciate your help with this task.", cefr: "B1", category: "Работа" },
-  { word: "That sounds like a great idea", transcription: "/ðæt saʊndz laɪk ə ɡreɪt aɪˈdɪə/", translation: "Это звучит как отличная идея", example: "That sounds like a great idea! Let's try it.", cefr: "B1", category: "Работа" },
-  { word: "I completely agree", transcription: "/aɪ kəmˈpliːtli əˈɡriː/", translation: "Я полностью согласен", example: "I completely agree with your approach.", cefr: "B1", category: "Работа" },
+  // ── B1: РАБОТА ───────────────────────────────────────────────────────────
+  { word: "I'm working on a project", transcription: "/aɪm ˈwɜːrkɪŋ ɒn ə ˈprɒdʒɛkt/", translation: "Работаю над проектом", example: "I'm working on a project.", cefr: "B1", category: "Работа" },
+  { word: "I appreciate your help", transcription: "/aɪ əˈpriːʃieɪt jɔːr hɛlp/", translation: "Ценю твою помощь", example: "I appreciate your help.", cefr: "B1", category: "Работа" },
+  { word: "I completely agree", transcription: "/aɪ kəmˈpliːtli əˈɡriː/", translation: "Полностью согласен", example: "I completely agree with you.", cefr: "B1", category: "Работа" },
 
-  // ── B2: ПРОДВИНУТЫЕ ВЫРАЖЕНИЯ ────────────────────────────────────────────
+  // ── B2: ПРОДВИНУТЫЕ ──────────────────────────────────────────────────────
   { word: "To be honest", transcription: "/tə biː ˈɒnɪst/", translation: "Честно говоря", example: "To be honest, I don't know.", cefr: "B2", category: "Продвинутые" },
-  { word: "In other words", transcription: "/ɪn ˈʌðər wɜːrdz/", translation: "Другими словами", example: "In other words, we failed.", cefr: "B2", category: "Продвинутые" },
-  { word: "What I mean is", transcription: "/wɒt aɪ miːn ɪz/", translation: "Я имею в виду", example: "What I mean is we need more time.", cefr: "B2", category: "Продвинутые" },
-  { word: "It's worth noting that", transcription: "/ɪts wɜːrθ ˈnoʊtɪŋ ðæt/", translation: "Стоит отметить, что", example: "It's worth noting that prices have risen.", cefr: "B2", category: "Продвинутые" },
+  { word: "In other words", transcription: "/ɪn ˈʌðər wɜːrdz/", translation: "Другими словами", example: "In other words, it failed.", cefr: "B2", category: "Продвинутые" },
+  { word: "What I mean is", transcription: "/wɒt aɪ miːn ɪz/", translation: "Я имею в виду", example: "What I mean is we need time.", cefr: "B2", category: "Продвинутые" },
   { word: "On the other hand", transcription: "/ɒn ðə ˈʌðər hænd/", translation: "С другой стороны", example: "On the other hand, it could work.", cefr: "B2", category: "Продвинутые" },
-  { word: "As far as I know", transcription: "/æz fɑːr æz aɪ noʊ/", translation: "Насколько я знаю", example: "As far as I know, the project is on track.", cefr: "B2", category: "Продвинутые" },
-  { word: "It goes without saying", transcription: "/ɪt ɡoʊz wɪˈðaʊt ˈseɪɪŋ/", translation: "Само собой разумеется", example: "It goes without saying that practice is key.", cefr: "B2", category: "Продвинутые" },
-  { word: "I couldn't agree more", transcription: "/aɪ ˈkʊdnt əˈɡriː mɔːr/", translation: "Полностью с вами согласен", example: "I couldn't agree more with that statement.", cefr: "B2", category: "Продвинутые" },
-  { word: "Having said that", transcription: "/ˈhævɪŋ sɛd ðæt/", translation: "Тем не менее / При этом", example: "Having said that, we should still try.", cefr: "B2", category: "Продвинутые" },
-  { word: "It's a matter of", transcription: "/ɪts ə ˈmætər əv/", translation: "Это вопрос / дело в том, что", example: "It's a matter of time before it works.", cefr: "B2", category: "Продвинутые" },
-  { word: "There's no doubt that", transcription: "/ðɛrz noʊ daʊt ðæt/", translation: "Нет никаких сомнений, что", example: "There's no doubt that English opens doors.", cefr: "B2", category: "Продвинутые" },
-  { word: "I'd be happy to", transcription: "/aɪd biː ˈhæpi tə/", translation: "Я с удовольствием", example: "I'd be happy to help you with that.", cefr: "B2", category: "Продвинутые" },
-  { word: "It turns out that", transcription: "/ɪt tɜːrnz aʊt ðæt/", translation: "Оказывается, что", example: "It turns out that I was right all along.", cefr: "B2", category: "Продвинутые" },
-  { word: "What strikes me is", transcription: "/wɒt straɪks miː ɪz/", translation: "Что меня поражает — это", example: "What strikes me is how fast AI evolves.", cefr: "B2", category: "Продвинутые" },
+  { word: "As far as I know", transcription: "/æz fɑːr æz aɪ noʊ/", translation: "Насколько я знаю", example: "As far as I know, it's fine.", cefr: "B2", category: "Продвинутые" },
+  { word: "Having said that", transcription: "/ˈhævɪŋ sɛd ðæt/", translation: "Тем не менее", example: "Having said that, let's try.", cefr: "B2", category: "Продвинутые" },
+  { word: "I couldn't agree more", transcription: "/aɪ ˈkʊdnt əˈɡriː mɔːr/", translation: "Полностью согласен", example: "I couldn't agree more.", cefr: "B2", category: "Продвинутые" },
+  { word: "It goes without saying", transcription: "/ɪt ɡoʊz wɪˈðaʊt ˈseɪɪŋ/", translation: "Само собой разумеется", example: "It goes without saying.", cefr: "B2", category: "Продвинутые" },
+  { word: "It's worth noting", transcription: "/ɪts wɜːrθ ˈnoʊtɪŋ/", translation: "Стоит отметить", example: "It's worth noting that prices rose.", cefr: "B2", category: "Продвинутые" },
+  { word: "I'd be happy to", transcription: "/aɪd biː ˈhæpi tə/", translation: "С удовольствием", example: "I'd be happy to help.", cefr: "B2", category: "Продвинутые" },
 ];
 
 // Filter by user level for display
+const FREQ_WORDS = ALL_PHRASES;
+
+ for display
 const FREQ_WORDS = ALL_PHRASES;
 
 
@@ -365,6 +359,17 @@ async function generateStory(phrases, topic) {
   });
   const data = await res.json();
   return data.story || "";
+}
+
+// Split story into short paragraphs (2-3 sentences each)
+function splitIntoParagraphs(text) {
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  const paragraphs = [];
+  for (let i = 0; i < sentences.length; i += 2) {
+    const para = sentences.slice(i, i + 2).join(" ").trim();
+    if (para) paragraphs.push(para);
+  }
+  return paragraphs.length > 0 ? paragraphs : [text];
 }
 
 // ─── COMPONENTS ──────────────────────────────────────────────────────────────
@@ -683,6 +688,11 @@ function QuizModule({ studiedCards }) {
       setScore((s) => s + 1);
       setStreak((s) => { const ns = s + 1; setBestStreak((b) => Math.max(b, ns)); return ns; });
       speakText(question.correctWord, 0.9);
+      // Auto-advance after 1 second on correct answer
+      setTimeout(() => {
+        setSelected(null);
+        setQuestion(safeCards ? buildQuestion(safeCards) : null);
+      }, 1000);
     } else {
       setStreak(0);
       setShake(true);
@@ -751,10 +761,15 @@ function QuizModule({ studiedCards }) {
         })}
       </div>
 
-      {selected && (
-        <button onClick={next} style={{ background: selected.isCorrect ? "linear-gradient(135deg, #00cc66, #008844)" : "linear-gradient(135deg, #333, #222)", border: "none", borderRadius: 14, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
-          {selected.isCorrect ? "Отлично! Следующий →" : "Попробуем ещё →"}
+      {selected && !selected.isCorrect && (
+        <button onClick={next} style={{ background: "linear-gradient(135deg, #333, #222)", border: "none", borderRadius: 14, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+          Понял, следующий →
         </button>
+      )}
+      {selected && selected.isCorrect && (
+        <div style={{ textAlign: "center", color: "#00ff88", fontSize: 13, padding: "8px", animation: "fadeIn 0.2s ease" }}>
+          ✓ Переходим дальше...
+        </div>
       )}
     </div>
   );
@@ -804,21 +819,50 @@ function BuilderModule() {
   const [score, setScore] = useState(0);
   const [total, setTotal] = useState(0);
   const [listened, setListened] = useState(false);
+  // Error weighting: track mistakes per sentence id
+  const [errorCounts, setErrorCounts] = useState({});
+  // Queue: sentences weighted by errors
+  const [queue, setQueue] = useState([]);
+  const [mistakeOnCurrent, setMistakeOnCurrent] = useState(false);
 
   const filtered = BUILDER_SENTENCES.filter(s => s.cefr === levelFilter);
 
-  const loadNew = (excludeId) => {
-    const pool = filtered.filter(s => s.id !== excludeId);
-    const next = pool[Math.floor(Math.random() * pool.length)];
+  // Build weighted queue: sentences with more errors appear more often
+  const buildQueue = (errors) => {
+    const q = [];
+    filtered.forEach(s => {
+      const e = errors[s.id] || 0;
+      // 1 = normal, 2 = one mistake, 3 = two+ mistakes
+      const weight = e === 0 ? 1 : e === 1 ? 2 : 3;
+      for (let i = 0; i < weight; i++) q.push(s);
+    });
+    return shuffleArr(q);
+  };
+
+  const loadFromQueue = (currentId, errors) => {
+    let q = queue.filter(s => s.id !== currentId);
+    if (q.length === 0) q = buildQueue(errors).filter(s => s.id !== currentId);
+    const next = q[0];
+    setQueue(q.slice(1));
     setCurrent(next);
     setWordBank(shuffleArr(next.words.map((w, i) => ({ w, key: i }))));
     setAssembled([]);
     setCompleted(false);
     setListened(false);
+    setMistakeOnCurrent(false);
   };
 
   useEffect(() => {
-    if (filtered.length > 0) loadNew(null);
+    if (filtered.length > 0) {
+      const q = buildQueue({});
+      setQueue(q.slice(1));
+      setCurrent(q[0]);
+      setWordBank(shuffleArr(q[0].words.map((w, i) => ({ w, key: i }))));
+      setAssembled([]);
+      setCompleted(false);
+      setMistakeOnCurrent(false);
+      setErrorCounts({});
+    }
   }, [levelFilter]);
 
   // Real-time check: compare assembled so far with correct words
@@ -842,6 +886,15 @@ function BuilderModule() {
         setScore(s => s + 1);
         setTotal(t => t + 1);
         speakText(current.words.join(" "), 0.85);
+      } else {
+        // Track mistake on this sentence
+        if (!mistakeOnCurrent) {
+          setMistakeOnCurrent(true);
+          setErrorCounts(prev => ({
+            ...prev,
+            [current.id]: Math.min((prev[current.id] || 0) + 1, 3)
+          }));
+        }
       }
     }
   }, [assembled, current]);
@@ -873,6 +926,7 @@ function BuilderModule() {
   if (!current) return <div style={{ color: "#555", textAlign: "center", padding: 40 }}>Загрузка...</div>;
 
   const accuracy = total > 0 ? Math.round(score / total * 100) : 0;
+  const errCount = errorCounts[current.id] || 0;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -912,6 +966,11 @@ function BuilderModule() {
       {/* Hint + listen */}
       <div style={{ background: "#0d1117", border: "1px solid #ffffff08", borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
         <span style={{ color: "#555", fontSize: 12 }}>🇷🇺 {current.hint}</span>
+        {errCount > 0 && (
+          <span style={{ background: errCount >= 2 ? "#ff444420" : "#ff8c0020", border: `1px solid ${errCount >= 2 ? "#ff444440" : "#ff8c0040"}`, borderRadius: 6, padding: "2px 8px", fontSize: 10, color: errCount >= 2 ? "#ff4444" : "#ff8c00", fontWeight: 700 }}>
+            {errCount === 1 ? "⚠️ повторяем" : "🔥 прорабатываем"}
+          </span>
+        )}
         <button onClick={listen} style={{
           marginLeft: "auto", background: listened ? "#003300" : "#001a33",
           border: `1px solid ${listened ? "#00ff8840" : "#4488ff40"}`,
@@ -950,6 +1009,15 @@ function BuilderModule() {
         {completed && <span style={{ marginLeft: "auto", fontSize: 20 }}>🎉</span>}
       </div>
 
+      {/* Show translation when completed */}
+      {completed && (
+        <div style={{ background: "linear-gradient(135deg, #0a2a0a, #061406)", border: "1px solid #00ff8840", borderRadius: 14, padding: "14px 18px", animation: "fadeIn 0.3s ease" }}>
+          <div style={{ color: "#555", fontSize: 10, textTransform: "uppercase", letterSpacing: 2, marginBottom: 6 }}>Перевод</div>
+          <div style={{ color: "#00ff88", fontSize: 18, fontWeight: 700 }}>{current.hint}</div>
+          <div style={{ color: "#444", fontSize: 12, marginTop: 6 }}>{current.words.join(" ")}</div>
+        </div>
+      </div>
+
       {/* Word bank */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, minHeight: 48 }}>
         {wordBank.map(item => (
@@ -967,7 +1035,7 @@ function BuilderModule() {
       {/* Buttons */}
       <div style={{ display: "flex", gap: 10 }}>
         {completed ? (
-          <button onClick={() => { loadNew(current.id); }} style={{
+          <button onClick={() => { loadFromQueue(current.id, errorCounts); }} style={{
             flex: 1, background: "linear-gradient(135deg, #00cc66, #008844)",
             border: "none", borderRadius: 12, padding: "13px", color: "#fff",
             fontWeight: 700, cursor: "pointer", fontSize: 14
@@ -980,7 +1048,7 @@ function BuilderModule() {
               flex: 1, background: "#0d1117", border: "1px solid #333",
               borderRadius: 12, padding: "13px", color: "#666", cursor: "pointer", fontSize: 13
             }}>↺ Сбросить</button>
-            <button onClick={() => { setTotal(t => t + 1); loadNew(current.id); }} style={{
+            <button onClick={() => { setTotal(t => t + 1); loadFromQueue(current.id, errorCounts); }} style={{
               background: "#0d1117", border: "1px solid #333",
               borderRadius: 12, padding: "13px 16px", color: "#444", cursor: "pointer", fontSize: 13
             }}>Пропустить</button>
@@ -1191,6 +1259,28 @@ function DiaryModule() {
   const [entries, setEntries] = useState(() => {
     try { return JSON.parse(localStorage.getItem("diary_entries") || "[]"); } catch { return []; }
   });
+  const [addedPhrases, setAddedPhrases] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("diary_added") || "[]"); } catch { return []; }
+  });
+
+  const addToCards = (phrase, translation) => {
+    const existing = JSON.parse(localStorage.getItem("srs_cards_v4") || "[]");
+    const alreadyExists = existing.some(c => c.word === phrase);
+    if (alreadyExists) return;
+    const newCard = {
+      word: phrase, transcription: "", translation,
+      example: phrase, cefr: "A2", category: "Мой дневник",
+      id: Date.now(), srsLevel: 0, nextReview: Date.now(),
+      reviewed: 0, unlocked: true
+    };
+    const updated = [...existing, newCard];
+    localStorage.setItem("srs_cards_v4", JSON.stringify(updated));
+    setAddedPhrases(prev => {
+      const next = [...prev, phrase];
+      localStorage.setItem("diary_added", JSON.stringify(next));
+      return next;
+    });
+  };
   const [view, setView] = useState("write"); // write | history
 
   const save = (entry) => {
@@ -1312,6 +1402,47 @@ Keep feedback encouraging and constructive. Focus on patterns, not just individu
         <div style={{ background: "#0a0a1a", border: "1px solid #4444ff30", borderRadius: 16, padding: "18px 18px", animation: "fadeIn 0.3s ease" }}>
           <div style={{ color: "#4488ff", fontWeight: 700, fontSize: 13, marginBottom: 12 }}>Обратная связь от Claude</div>
           <div style={{ color: "#bbb", fontSize: 13, lineHeight: 1.9, whiteSpace: "pre-wrap" }}>{feedback}</div>
+
+          {/* Parse corrections and show add-to-deck buttons */}
+          {(() => {
+            const corrections = [];
+            const lines = feedback.split("\n");
+            lines.forEach(line => {
+              const match = line.match(/❌.+?→\s*✅\s*(.+?)(?:\s*\(|$)/);
+              if (match) {
+                const corrected = match[1].trim();
+                if (corrected.length > 2 && corrected.length < 60) {
+                  corrections.push(corrected);
+                }
+              }
+            });
+            if (corrections.length === 0) return null;
+            return (
+              <div style={{ marginTop: 14, borderTop: "1px solid #ffffff10", paddingTop: 14 }}>
+                <div style={{ color: "#555", fontSize: 11, textTransform: "uppercase", letterSpacing: 2, marginBottom: 10 }}>
+                  Добавить исправления в словарь:
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {corrections.map((c, i) => {
+                    const added = addedPhrases.includes(c);
+                    return (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "#0d1117", border: "1px solid #ffffff08", borderRadius: 10, padding: "8px 12px" }}>
+                        <span style={{ color: "#00ff88", fontSize: 13, flex: 1 }}>{c}</span>
+                        <button
+                          onClick={() => addToCards(c, c)}
+                          disabled={added}
+                          style={{ background: added ? "#003300" : "#00ff8820", border: `1px solid ${added ? "#00ff8860" : "#00ff8840"}`, borderRadius: 8, padding: "4px 12px", color: added ? "#00ff88" : "#00cc66", fontSize: 11, fontWeight: 700, cursor: added ? "default" : "pointer" }}
+                        >
+                          {added ? "✓ Добавлено" : "+ В словарь"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
           <button onClick={() => { setText(""); setFeedback(null); }}
             style={{ marginTop: 14, background: "none", border: "1px solid #333", color: "#666", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontSize: 12 }}>
             Написать следующую запись
@@ -1361,8 +1492,8 @@ function ReadingModule({ studiedCards }) {
     setStory(null);
     setActivePhrase(null);
     setLoading(true);
-    const story = await generateStory(wordsToUse, t.label);
-    setStory(story);
+    const storyText = await generateStory(wordsToUse, t.label);
+    setStory(storyText);
     setLoading(false);
   };
 
@@ -1396,7 +1527,7 @@ function ReadingModule({ studiedCards }) {
     </div>
   );
 
-  const segments = story ? highlightPhrases(story, wordsToUse) : [];
+  // paragraphs handled inline
   const foundPhrases = story ? wordsToUse.filter((w) => story.toLowerCase().includes(w.word.toLowerCase())) : [];
 
   return (
@@ -1412,13 +1543,27 @@ function ReadingModule({ studiedCards }) {
 
       {story && !loading && (
         <>
-          <div style={{ background: "#0d1117", border: "1px solid #ffffff12", borderRadius: 16, padding: "22px 20px", lineHeight: 2, fontSize: 15, color: "#ddd" }}>
-            {segments.map((seg, i) =>
-              seg.phrase ? (
-                <span key={i} onClick={() => handlePhraseClick(seg.phrase)} style={{ background: activePhrase?.word === seg.phrase.word ? "#cc44ff30" : "#cc44ff15", border: `1px solid ${activePhrase?.word === seg.phrase.word ? "#cc44ff80" : "#cc44ff40"}`, borderRadius: 6, padding: "1px 5px", cursor: "pointer", color: activePhrase?.word === seg.phrase.word ? "#fff" : "#cc88ff", fontWeight: 600, transition: "all 0.15s" }}>{seg.text}</span>
-              ) : <span key={i}>{seg.text}</span>
-            )}
-          </div>
+          {/* Paragraphs with individual play/stop controls */}
+          {splitIntoParagraphs(story).map((para, pi) => {
+            const paraSegs = highlightPhrases(para, wordsToUse);
+            return (
+              <div key={pi} style={{ background: "#0d1117", border: "1px solid #ffffff12", borderRadius: 16, padding: "16px 18px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <span style={{ color: "#333", fontSize: 10, fontFamily: "monospace" }}>#{pi + 1}</span>
+                  <button onClick={() => speakText(para, 0.75)} style={{ background: "#cc44ff15", border: "1px solid #cc44ff30", borderRadius: 8, padding: "4px 12px", color: "#cc88ff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>▶ Читать</button>
+                  <button onClick={() => { window.speechSynthesis?.cancel(); }} style={{ background: "#1a0a0a", border: "1px solid #ff444430", borderRadius: 8, padding: "4px 10px", color: "#ff6666", fontSize: 12, cursor: "pointer" }}>⏹ Стоп</button>
+                  <button onClick={() => speakText(para, 0.55)} style={{ background: "#0a1a0a", border: "1px solid #00ff8820", borderRadius: 8, padding: "4px 10px", color: "#00ff8880", fontSize: 11, cursor: "pointer" }}>🐢 Медленно</button>
+                </div>
+                <div style={{ lineHeight: 2, fontSize: 15, color: "#ddd" }}>
+                  {paraSegs.map((seg, i) =>
+                    seg.phrase ? (
+                      <span key={i} onClick={() => handlePhraseClick(seg.phrase)} style={{ background: activePhrase?.word === seg.phrase.word ? "#cc44ff30" : "#cc44ff15", border: `1px solid ${activePhrase?.word === seg.phrase.word ? "#cc44ff80" : "#cc44ff40"}`, borderRadius: 6, padding: "1px 5px", cursor: "pointer", color: activePhrase?.word === seg.phrase.word ? "#fff" : "#cc88ff", fontWeight: 600, transition: "all 0.15s" }}>{seg.text}</span>
+                    ) : <span key={i}>{seg.text}</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
 
           {activePhrase && (
             <div style={{ background: "linear-gradient(135deg, #1a0a2a, #0d0617)", border: "1px solid #cc44ff40", borderRadius: 14, padding: "14px 18px" }}>
@@ -1441,10 +1586,223 @@ function ReadingModule({ studiedCards }) {
               ))}
             </div>
           </div>
+        </>
+      )}
+    </div>
+  );
+}
 
-          <button onClick={() => speakText(story, 0.8)} style={{ background: "linear-gradient(135deg, #cc44ff20, #8822cc20)", border: "1px solid #cc44ff40", borderRadius: 14, padding: "12px", color: "#cc88ff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-            🔊 Прочитать весь текст вслух
+
+// ─── NEWS MODULE ──────────────────────────────────────────────────────────────
+
+function NewsModule() {
+  const [article, setArticle] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [retelling, setRetelling] = useState("");
+  const [feedback, setFeedback] = useState(null);
+  const [checkLoading, setCheckLoading] = useState(false);
+  const [addedWords, setAddedWords] = useState([]);
+  const [topic, setTopic] = useState(null);
+
+  const TOPICS = [
+    { id: "tech", label: "Технологии", icon: "💻" },
+    { id: "science", label: "Наука", icon: "🔬" },
+    { id: "business", label: "Бизнес", icon: "📈" },
+    { id: "ai", label: "AI", icon: "🤖" },
+    { id: "world", label: "Мир", icon: "🌍" },
+  ];
+
+  const loadArticle = async (t) => {
+    setTopic(t);
+    setArticle(null);
+    setFeedback(null);
+    setRetelling("");
+    setLoading(true);
+
+    const sys = `You are a news writer creating simplified English news for B1 learners.
+Write a SHORT news article (4-5 sentences only) about a realistic recent topic in: ${t.label}.
+
+FORMAT exactly like this:
+HEADLINE: [short headline in English]
+TEXT: [4-5 simple sentences, B1 level, real-sounding news]
+KEY WORDS: [3-4 important words from the text with Russian translation, format: word — перевод]
+
+Keep sentences short and clear. Use simple vocabulary. Make it sound like real news.`;
+
+    const reply = await callClaude([{ role: "user", content: "Write the news article now." }], sys);
+    setArticle(reply);
+    setLoading(false);
+  };
+
+  const checkRetelling = async () => {
+    if (!retelling.trim() || retelling.trim().length < 10) return;
+    setCheckLoading(true);
+    setFeedback(null);
+
+    const sys = `You are an English teacher. A B1 Russian learner read this news article:
+
+${article}
+
+And wrote this retelling in English:
+"${retelling}"
+
+Respond in this EXACT format:
+
+✅ ПОНЯЛ ПРАВИЛЬНО
+[What they understood correctly — in Russian, 1-2 sentences]
+
+🔧 ИСПРАВЛЕНИЯ
+[Each correction: ❌ wrong → ✅ correct (brief Russian explanation)]
+If no errors write: Ошибок нет! Отлично.
+
+💡 НОВЫЕ СЛОВА
+[2-3 useful words/phrases from the article they could learn: word — перевод — example]
+
+📝 КАК МОЖНО СКАЗАТЬ
+[One better way to express their main idea in natural English]
+
+Keep it encouraging and brief.`;
+
+    const reply = await callClaude([{ role: "user", content: retelling }], sys);
+    setFeedback(reply);
+    setCheckLoading(false);
+  };
+
+  const addToCards = (word, translation) => {
+    if (addedWords.includes(word)) return;
+    const existing = JSON.parse(localStorage.getItem("srs_cards_v4") || "[]");
+    const newCard = {
+      word, transcription: "", translation,
+      example: word, cefr: "B1", category: "Новости",
+      id: Date.now() + Math.random(), srsLevel: 0,
+      nextReview: Date.now(), reviewed: 0, unlocked: true
+    };
+    localStorage.setItem("srs_cards_v4", JSON.stringify([...existing, newCard]));
+    setAddedWords(prev => [...prev, word]);
+  };
+
+  // Parse article sections
+  const parseArticle = (text) => {
+    const headline = text.match(/HEADLINE:\s*(.+)/)?.[1]?.trim() || "";
+    const body = text.match(/TEXT:\s*([\s\S]+?)(?=KEY WORDS:|$)/)?.[1]?.trim() || "";
+    const keyWordsRaw = text.match(/KEY WORDS:\s*([\s\S]+?)$/)?.[1]?.trim() || "";
+    const keyWords = keyWordsRaw.split("
+").filter(l => l.includes("—")).map(l => {
+      const [word, translation] = l.split("—").map(s => s.trim());
+      return { word, translation };
+    });
+    return { headline, body, keyWords };
+  };
+
+  if (!topic) return (
+    <div>
+      <div style={{ color: "#fff", fontWeight: 700, fontSize: 15, marginBottom: 4 }}>📰 Новости</div>
+      <div style={{ color: "#555", fontSize: 12, marginBottom: 20 }}>
+        Читай короткие новости → пересказывай → получай исправления
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {TOPICS.map(t => (
+          <button key={t.id} onClick={() => loadArticle(t)} style={{
+            background: "#0d1117", border: "1px solid #ffffff15", borderRadius: 14,
+            padding: "18px 14px", cursor: "pointer", textAlign: "left", transition: "all 0.2s"
+          }}
+            onMouseOver={e => { e.currentTarget.style.border = "1px solid #ff8c0050"; e.currentTarget.style.background = "#1a1000"; }}
+            onMouseOut={e => { e.currentTarget.style.border = "1px solid #ffffff15"; e.currentTarget.style.background = "#0d1117"; }}
+          >
+            <div style={{ fontSize: 26, marginBottom: 8 }}>{t.icon}</div>
+            <div style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>{t.label}</div>
           </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (loading) return (
+    <div style={{ textAlign: "center", padding: 40 }}>
+      <div style={{ color: "#ff8c00", fontSize: 13, animation: "pulse 1.2s infinite" }}>📰 Загружаю новость...</div>
+    </div>
+  );
+
+  const parsed = article ? parseArticle(article) : null;
+  const wordCount = retelling.trim().split(/\s+/).filter(Boolean).length;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontSize: 18 }}>{topic.icon}</span>
+        <span style={{ color: "#fff", fontWeight: 700 }}>{topic.label}</span>
+        <button onClick={() => setTopic(null)} style={{ marginLeft: "auto", background: "none", border: "1px solid #333", color: "#888", borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontSize: 12 }}>← темы</button>
+        {article && <button onClick={() => loadArticle(topic)} style={{ background: "none", border: "1px solid #ff8c0040", color: "#ff8c00", borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontSize: 12 }}>🔄 новая</button>}
+      </div>
+
+      {parsed && (
+        <>
+          {/* Article */}
+          <div style={{ background: "#0d1117", border: "1px solid #ffffff12", borderRadius: 16, padding: "18px 20px" }}>
+            <div style={{ color: "#ff8c00", fontSize: 11, textTransform: "uppercase", letterSpacing: 2, marginBottom: 8 }}>Новость</div>
+            <div style={{ color: "#fff", fontSize: 17, fontWeight: 800, marginBottom: 12, lineHeight: 1.4 }}>{parsed.headline}</div>
+            <div style={{ color: "#ddd", fontSize: 14, lineHeight: 1.9 }}>{parsed.body}</div>
+            <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+              <button onClick={() => speakText(parsed.headline + ". " + parsed.body, 0.8)}
+                style={{ background: "#ff8c0015", border: "1px solid #ff8c0030", borderRadius: 8, padding: "5px 12px", color: "#ff8c00", fontSize: 12, cursor: "pointer" }}>▶ Читать</button>
+              <button onClick={() => speakText(parsed.headline + ". " + parsed.body, 0.6)}
+                style={{ background: "#0a1a0a", border: "1px solid #00ff8820", borderRadius: 8, padding: "5px 12px", color: "#00ff8870", fontSize: 11, cursor: "pointer" }}>🐢 Медленно</button>
+              <button onClick={() => window.speechSynthesis?.cancel()}
+                style={{ background: "#1a0a0a", border: "1px solid #ff444430", borderRadius: 8, padding: "5px 10px", color: "#ff6666", fontSize: 11, cursor: "pointer" }}>⏹</button>
+            </div>
+          </div>
+
+          {/* Key words */}
+          {parsed.keyWords.length > 0 && (
+            <div style={{ background: "#0a0a0f", border: "1px solid #ffffff08", borderRadius: 12, padding: "12px 16px" }}>
+              <div style={{ color: "#555", fontSize: 10, textTransform: "uppercase", letterSpacing: 2, marginBottom: 10 }}>Ключевые слова</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {parsed.keyWords.map((kw, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ color: "#ff8c00", fontWeight: 700, fontSize: 13, minWidth: 100 }}>{kw.word}</span>
+                    <span style={{ color: "#666", fontSize: 12 }}>{kw.translation}</span>
+                    <button onClick={() => addToCards(kw.word, kw.translation)}
+                      disabled={addedWords.includes(kw.word)}
+                      style={{ marginLeft: "auto", background: addedWords.includes(kw.word) ? "#003300" : "#00ff8810", border: `1px solid ${addedWords.includes(kw.word) ? "#00ff8840" : "#00ff8820"}`, borderRadius: 6, padding: "3px 10px", color: addedWords.includes(kw.word) ? "#00ff88" : "#00cc66", fontSize: 10, fontWeight: 700, cursor: addedWords.includes(kw.word) ? "default" : "pointer" }}>
+                      {addedWords.includes(kw.word) ? "✓" : "+ в словарь"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Retelling */}
+          <div>
+            <div style={{ color: "#fff", fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
+              Перескажи своими словами на английском
+            </div>
+            <div style={{ color: "#555", fontSize: 11, marginBottom: 10 }}>
+              Не нужно точно — просто напиши что понял. Хоть 2-3 предложения.
+            </div>
+            <div style={{ position: "relative" }}>
+              <textarea value={retelling} onChange={e => setRetelling(e.target.value)}
+                placeholder="Write what you understood from the news..."
+                style={{ width: "100%", minHeight: 100, background: "#0d1117", border: "1px solid #ffffff20", borderRadius: 14, padding: "12px 16px", color: "#fff", fontSize: 14, lineHeight: 1.7, outline: "none", resize: "vertical", fontFamily: "inherit" }} />
+              <div style={{ position: "absolute", bottom: 10, right: 12, color: wordCount >= 15 ? "#00ff88" : "#444", fontSize: 11 }}>
+                {wordCount} слов
+              </div>
+            </div>
+            <button onClick={checkRetelling} disabled={checkLoading || retelling.trim().length < 10}
+              style={{ marginTop: 10, width: "100%", background: checkLoading || retelling.trim().length < 10 ? "#1a1a1a" : "linear-gradient(135deg, #ff8c00, #cc6600)", border: "none", borderRadius: 12, padding: "12px", color: checkLoading || retelling.trim().length < 10 ? "#444" : "#fff", fontWeight: 700, cursor: checkLoading || retelling.trim().length < 10 ? "not-allowed" : "pointer", fontSize: 14 }}>
+              {checkLoading ? "✍️ Проверяю..." : "Проверить пересказ →"}
+            </button>
+          </div>
+
+          {/* Feedback */}
+          {feedback && (
+            <div style={{ background: "#0a0a1a", border: "1px solid #ff8c0020", borderRadius: 16, padding: "18px", animation: "fadeIn 0.3s ease" }}>
+              <div style={{ color: "#ff8c00", fontWeight: 700, fontSize: 13, marginBottom: 12 }}>Обратная связь</div>
+              <div style={{ color: "#bbb", fontSize: 13, lineHeight: 1.9, whiteSpace: "pre-wrap" }}>{feedback}</div>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -1721,6 +2079,7 @@ export default function App() {
     { id: "reading", label: "Текст", icon: "📖", locked: isLocked },
     { id: "shadow", label: "Тень", icon: "🎙️" },
     { id: "diary", label: "Дневник", icon: "✍️" },
+    { id: "news", label: "Новости", icon: "📰" },
     { id: "chat", label: "Диалог", icon: "🗣️" },
     { id: "plan", label: "План", icon: "📅" },
   ];
@@ -1767,7 +2126,7 @@ export default function App() {
 
       {/* Tabs */}
       <div style={{ maxWidth: 600, margin: "0 auto", padding: "14px 20px 0" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 4, marginBottom: 22 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(9, 1fr)", gap: 4, marginBottom: 22 }}>
           {tabs.map((t) => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{ background: tab === t.id ? "linear-gradient(135deg, #00cc66, #008844)" : "#0d1117", border: tab === t.id ? "none" : "1px solid #ffffff10", borderRadius: 12, padding: "9px 4px", cursor: "pointer", color: tab === t.id ? "#fff" : t.locked ? "#333" : "#666", fontSize: 10, fontWeight: 700, transition: "all 0.2s", position: "relative" }}>
               <div style={{ fontSize: 16, marginBottom: 2 }}>{t.icon}</div>
@@ -1788,6 +2147,7 @@ export default function App() {
           {tab === "reading" && <ReadingModule studiedCards={studiedCards} />}
           {tab === "shadow" && <ShadowingModule />}
           {tab === "diary" && <DiaryModule />}
+          {tab === "news" && <NewsModule />}
           {tab === "chat" && <ChatModule />}
           {tab === "plan" && <PlanModule />}
         </div>
