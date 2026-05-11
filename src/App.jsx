@@ -588,9 +588,13 @@ function QuizModule({ studiedCards }) {
       {/* Timer bar (timed mode only) */}
       {mode === "timed" && (
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
             <span style={{ color: timerColor, fontSize: 13, fontWeight: 700 }}>⏱ {timeLeft} сек</span>
             <span style={{ color: "#ff8c00", fontSize: 13 }}>⚡ {points} очков {bestPoints > 0 && <span style={{ color: "#555", fontSize: 11 }}>· рекорд: {bestPoints}</span>}</span>
+            <button onClick={() => { clearTimer(); setTimerActive(false); setMode("normal"); setSelected(null); setQuestion(safeCards ? buildQuestion(safeCards) : null); }}
+              style={{ background: "#1a0a0a", border: "1px solid #ff444440", borderRadius: 8, padding: "4px 12px", color: "#ff6666", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+              ⏹ Стоп
+            </button>
           </div>
           <div style={{ height: 5, background: "#1a1a2e", borderRadius: 3, overflow: "hidden" }}>
             <div style={{ height: "100%", background: timerColor, borderRadius: 3, width: `${(timeLeft / 10) * 100}%`, transition: "width 1s linear, background 0.3s" }} />
