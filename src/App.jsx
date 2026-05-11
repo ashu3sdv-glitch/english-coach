@@ -626,6 +626,8 @@ function BuilderModule() {
         setScore(s => s + 1);
         setTotal(t => t + 1);
         speakText(current.words.join(" "), 0.85);
+        // Auto-advance after 1.2 seconds
+        setTimeout(() => loadFromQueue(current.id, errorCounts), 1200);
       } else if (!mistakeOnCurrent) {
         setMistakeOnCurrent(true);
         setErrorCounts(prev => ({ ...prev, [current.id]: Math.min((prev[current.id] || 0) + 1, 3) }));
@@ -693,7 +695,7 @@ function BuilderModule() {
       </div>
       <div style={{ display: "flex", gap: 10 }}>
         {completed ? (
-          <button onClick={() => loadFromQueue(current.id, errorCounts)} style={{ flex: 1, background: "linear-gradient(135deg,#00cc66,#008844)", border: "none", borderRadius: 12, padding: "13px", color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>Отлично! Следующее →</button>
+          <div style={{ textAlign: "center", color: "#00ff88", fontSize: 13, padding: "8px", animation: "fadeIn 0.2s ease" }}>✓ Отлично! Следующее...</div>
         ) : (
           <>
             <button onClick={reset} style={{ flex: 1, background: "#0d1117", border: "1px solid #333", borderRadius: 12, padding: "13px", color: "#666", cursor: "pointer", fontSize: 13 }}>↺ Сбросить</button>
@@ -984,8 +986,14 @@ If no errors: Ошибок не найдено!
           {(() => {
             const corrections = [];
             feedback.split("\n").forEach(line => {
-              const m = line.match(/✅\s+(.+?)(?:\s*\(|$)/);
-              if (m && m[1].trim().length > 2 && m[1].trim().length < 60) corrections.push(m[1].trim());
+              // Match pattern: ❌ wrong → ✅ corrected
+              const m = line.match(/❌.+?→\s*✅\s*(.+?)(?:\s*\(|$)/);
+              if (m) {
+                const phrase = m[1].trim().replace(/^["']|["']$/g, "");
+                if (phrase.length > 2 && phrase.length < 80 && !phrase.includes("ОЦЕНКА") && !phrase.includes("ИСПРАВЛ")) {
+                  corrections.push(phrase);
+                }
+              }
             });
             if (!corrections.length) return null;
             return (
@@ -1058,9 +1066,18 @@ KEY WORDS: [3-4 words: word — перевод]`;
 
   const parseArticle = (text) => {
     const headline = text.match(/HEADLINE:\s*(.+)/)?.[1]?.trim() || "";
-    const body = text.match(/TEXT:\s*([\s\S]+?)(?=KEY WORDS:|$)/)?.[1]?.trim() || "";
-    const kwRaw = text.match(/KEY WORDS:\s*([\s\S]+?)$/)?.[1]?.trim() || "";
-    const keyWords = kwRaw.split("\n").filter(l => l.includes("—")).map(l => { const [w, t] = l.split("—").map(s => s.trim()); return { word: w, translation: t }; });
+    const bodyMatch = text.match(/TEXT:\s*([\s\S]+?)(?=KEY WORDS:|$)/);
+    const body = bodyMatch?.[1]?.trim() || "";
+    const kwMatch = text.match(/KEY WORDS:\s*([\s\S]+?)$/);
+    const kwRaw = kwMatch?.[1]?.trim() || "";
+    const keyWords = kwRaw.split("\n")
+      .filter(l => l.includes("—") && l.trim().length > 3)
+      .slice(0, 4)
+      .map(l => {
+        const parts = l.split("—").map(s => s.trim().replace(/^[\d.\-\*\s]+/, ""));
+        return { word: parts[0], translation: parts[1] || "" };
+      })
+      .filter(kw => kw.word && kw.word.length > 1 && kw.word.length < 40);
     return { headline, body, keyWords };
   };
 
