@@ -473,22 +473,81 @@ function QuizModule({ studiedCards }) {
   const [total, setTotal] = useState(0);
   const [streak, setStreak] = useState(0);
   const [shake, setShake] = useState(false);
+  const [mode, setMode] = useState("normal"); // "normal" | "timed"
+  const [timeLeft, setTimeLeft] = useState(10);
+  const [timerActive, setTimerActive] = useState(false);
+  const [points, setPoints] = useState(0);
+  const [bestPoints, setBestPoints] = useState(() => { try { return parseInt(localStorage.getItem("quiz_best") || "0"); } catch { return 0; } });
+  const timerRef = useRef(null);
+
+  const clearTimer = () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
+
+  const startTimer = () => {
+    clearTimer();
+    setTimeLeft(10);
+    setTimerActive(true);
+    timerRef.current = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 1) {
+          clearTimer();
+          setTimerActive(false);
+          // Time out = wrong answer
+          setSelected({ isCorrect: false, timedOut: true });
+          setTotal(tot => tot + 1);
+          setStreak(0);
+          setPoints(0);
+          setShake(true);
+          setTimeout(() => {
+            setShake(false);
+            setSelected(null);
+            setQuestion(safeCards ? buildQuestion(safeCards) : null);
+            startTimer();
+          }, 1200);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => {
+    if (mode === "timed" && question && !selected) startTimer();
+    return clearTimer;
+  }, [mode, question]);
+
+  useEffect(() => { return clearTimer; }, []);
 
   const next = () => { setSelected(null); setQuestion(safeCards ? buildQuestion(safeCards) : null); };
 
   const pick = (opt) => {
     if (selected !== null) return;
+    clearTimer();
+    setTimerActive(false);
     setSelected(opt);
     setTotal(t => t + 1);
     if (opt.isCorrect) {
       setScore(s => s + 1);
       setStreak(s => s + 1);
       speakText(question.correctWord, 0.9);
-      setTimeout(() => { setSelected(null); setQuestion(safeCards ? buildQuestion(safeCards) : null); }, 1000);
+      if (mode === "timed") {
+        const earned = timeLeft >= 8 ? 3 : timeLeft >= 5 ? 2 : 1;
+        setPoints(p => {
+          const np = p + earned;
+          if (np > bestPoints) { setBestPoints(np); localStorage.setItem("quiz_best", String(np)); }
+          return np;
+        });
+        setTimeout(() => { setSelected(null); setQuestion(safeCards ? buildQuestion(safeCards) : null); }, 800);
+      } else {
+        setTimeout(() => { setSelected(null); setQuestion(safeCards ? buildQuestion(safeCards) : null); }, 1000);
+      }
     } else {
       setStreak(0);
+      if (mode === "timed") setPoints(0);
       setShake(true);
-      setTimeout(() => setShake(false), 500);
+      setTimeout(() => {
+        setShake(false);
+        if (mode === "timed") { setSelected(null); setQuestion(safeCards ? buildQuestion(safeCards) : null); }
+      }, 500);
     }
   };
 
@@ -502,6 +561,7 @@ function QuizModule({ studiedCards }) {
 
   if (!question) return null;
   const accuracy = total > 0 ? Math.round(score / total * 100) : 0;
+  const timerColor = timeLeft > 6 ? "#00ff88" : timeLeft > 3 ? "#ff8c00" : "#ff4444";
 
   const optionColor = opt => {
     if (!selected) return { bg: "#0d1117", border: "#ffffff15", color: "#ccc" };
@@ -511,7 +571,33 @@ function QuizModule({ studiedCards }) {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+      {/* Mode selector */}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={() => { setMode("normal"); clearTimer(); setTimerActive(false); setSelected(null); setQuestion(safeCards ? buildQuestion(safeCards) : null); }}
+          style={{ flex: 1, background: mode === "normal" ? "#00ff8820" : "#0d1117", border: `1px solid ${mode === "normal" ? "#00ff8860" : "#ffffff15"}`, borderRadius: 10, padding: "9px", color: mode === "normal" ? "#00ff88" : "#555", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+          🎮 Обычный
+        </button>
+        <button onClick={() => { setMode("timed"); setPoints(0); setScore(0); setTotal(0); setStreak(0); setSelected(null); setQuestion(safeCards ? buildQuestion(safeCards) : null); }}
+          style={{ flex: 1, background: mode === "timed" ? "#ff8c0020" : "#0d1117", border: `1px solid ${mode === "timed" ? "#ff8c0060" : "#ffffff15"}`, borderRadius: 10, padding: "9px", color: mode === "timed" ? "#ff8c00" : "#555", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+          ⚡ На время
+        </button>
+      </div>
+
+      {/* Timer bar (timed mode only) */}
+      {mode === "timed" && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+            <span style={{ color: timerColor, fontSize: 13, fontWeight: 700 }}>⏱ {timeLeft} сек</span>
+            <span style={{ color: "#ff8c00", fontSize: 13 }}>⚡ {points} очков {bestPoints > 0 && <span style={{ color: "#555", fontSize: 11 }}>· рекорд: {bestPoints}</span>}</span>
+          </div>
+          <div style={{ height: 5, background: "#1a1a2e", borderRadius: 3, overflow: "hidden" }}>
+            <div style={{ height: "100%", background: timerColor, borderRadius: 3, width: `${(timeLeft / 10) * 100}%`, transition: "width 1s linear, background 0.3s" }} />
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
         {[{ label: "Правильно", value: score, color: "#00ff88" }, { label: "Точность", value: accuracy + "%", color: "#4488ff" }, { label: "🔥 Серия", value: streak, color: "#ff8c00" }].map(s => (
           <div key={s.label} style={{ background: "#0d1117", border: "1px solid #ffffff10", borderRadius: 12, padding: "10px 8px", textAlign: "center" }}>
@@ -1051,7 +1137,7 @@ KEY WORDS: [3-4 words: word — перевод]`;
   const checkRetelling = async () => {
     if (!retelling.trim() || retelling.trim().length < 10) return;
     setCheckLoading(true); setFeedback(null);
-    const sys = `You are an English teacher. A B1 Russian learner read this article:\n${article}\nAnd wrote: "${retelling}"\n\nRespond:\n✅ ПОНЯЛ ПРАВИЛЬНО\n[Russian, 1-2 sentences]\n\n🔧 ИСПРАВЛЕНИЯ\n[❌ wrong → ✅ correct]\n\n💡 НОВЫЕ СЛОВА\n[2-3 words: word — перевод]\n\n📝 КАК ЛУЧШЕ СКАЗАТЬ\n[natural English version]`;
+    const sys = `You are an English teacher. A B1 Russian learner read this article:\n${article}\nAnd wrote: "${retelling}"\n\nRespond in this EXACT format:\n✅ ПОНЯЛ ПРАВИЛЬНО\n[Russian, 1-2 sentences praising what they understood]\n\n🔧 ИСПРАВЛЕНИЯ\n[Each error: ❌ wrong phrase → ✅ corrected phrase (brief Russian explanation)]\nIf no errors write: Ошибок нет!\n\n💡 НОВЫЕ СЛОВА\n[2-3 useful phrases from the article: phrase — перевод]\n\nDo NOT add any retelling or rewrite of the text. Keep it short and focused.`;
     const reply = await callClaude([{ role: "user", content: retelling }], sys);
     setFeedback(reply); setCheckLoading(false);
   };
@@ -1153,6 +1239,41 @@ KEY WORDS: [3-4 words: word — перевод]`;
             <div style={{ background: "#0a0a1a", border: "1px solid #ff8c0020", borderRadius: 16, padding: "16px" }}>
               <div style={{ color: "#ff8c00", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Обратная связь</div>
               <div style={{ color: "#bbb", fontSize: 13, lineHeight: 1.9, whiteSpace: "pre-wrap" }}>{feedback}</div>
+
+              {/* Add new words to deck */}
+              {(() => {
+                const newWords = [];
+                const lines = feedback.split("\n");
+                let inNewWords = false;
+                lines.forEach(line => {
+                  if (line.includes("💡") && line.includes("СЛОВА")) { inNewWords = true; return; }
+                  if (line.includes("✅") || line.includes("🔧") || line.includes("📝") || line.trim() === "") { if (inNewWords && line.trim() !== "") inNewWords = false; }
+                  if (inNewWords && line.includes("—")) {
+                    const parts = line.split("—").map(s => s.trim().replace(/^[\d.\-\*\s]+/, ""));
+                    if (parts[0] && parts[0].length > 1 && parts[0].length < 50) {
+                      newWords.push({ word: parts[0], translation: parts[1] || "" });
+                    }
+                  }
+                });
+                if (!newWords.length) return null;
+                return (
+                  <div style={{ marginTop: 14, borderTop: "1px solid #ffffff10", paddingTop: 14 }}>
+                    <div style={{ color: "#555", fontSize: 10, textTransform: "uppercase", letterSpacing: 2, marginBottom: 10 }}>Сохранить новые слова:</div>
+                    {newWords.map((w, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "#0d1117", border: "1px solid #ffffff08", borderRadius: 10, padding: "8px 12px", marginBottom: 6 }}>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ color: "#ff8c00", fontWeight: 700, fontSize: 13 }}>{w.word}</span>
+                          {w.translation && <span style={{ color: "#666", fontSize: 12, marginLeft: 8 }}>{w.translation}</span>}
+                        </div>
+                        <button onClick={() => addToCards(w.word, w.translation)} disabled={addedWords.includes(w.word)}
+                          style={{ background: addedWords.includes(w.word) ? "#003300" : "#00ff8810", border: `1px solid ${addedWords.includes(w.word) ? "#00ff8840" : "#00ff8820"}`, borderRadius: 8, padding: "4px 12px", color: addedWords.includes(w.word) ? "#00ff88" : "#00cc66", fontSize: 11, fontWeight: 700, cursor: addedWords.includes(w.word) ? "default" : "pointer" }}>
+                          {addedWords.includes(w.word) ? "✓" : "+ в словарь"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </>
