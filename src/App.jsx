@@ -1256,58 +1256,51 @@ KEY WORDS: [3-4 words: word — перевод]`;
 
 // ─── PHRASE HUNT MODULE ───────────────────────────────────────────────────────
 
-const HUNT_TEXTS = [
-  {
-    id: 1, cefr: "A2",
-    text: "Every morning I get up at 7 and make coffee. Then I check my phone for messages. I feel tired sometimes, but I need to start working. I have breakfast at 8 and take a shower before I begin my day.",
-  },
-  {
-    id: 2, cefr: "A2",
-    text: "I want to learn English because it opens many doors. I'm going to practise every day. Sometimes I think so, but I'm not sure about my progress. I need to speak more and I'm working on it every evening.",
-  },
-  {
-    id: 3, cefr: "B1",
-    text: "She came up with a great idea for the project, but we had to deal with some problems first. My car broke down on the way to work. It turned out to be a long day. We need to set up a meeting to figure out the next steps.",
-  },
-  {
-    id: 4, cefr: "B1",
-    text: "I've been working on this track all week and I can't give up now. By the way, my friend came up with a great title. Anyway, let me think about the mix. It depends on the tempo. That sounds great to me.",
-  },
-  {
-    id: 5, cefr: "B1",
-    text: "In my opinion, AI music is the future. I used to think it was too complicated, but I picked it up quickly. I've been working with Suno for a year now. Let me get back to you on the details. Good point about the vocals.",
-  },
-  {
-    id: 6, cefr: "B2",
-    text: "To be honest, I couldn't agree more with your approach. On the other hand, having said that, we should consider the risks. As far as I know, the project is on track. In other words, it goes without saying that preparation matters.",
-  },
-];
+// HUNT_TEXTS removed - now generated dynamically
 
 function PhraseHuntModule({ studiedCards }) {
-  const [textIdx, setTextIdx] = useState(0);
+  const [huntText, setHuntText] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [found, setFound] = useState([]);
-  const [wrong, setWrong] = useState([]);
   const [finished, setFinished] = useState(false);
-  const [score, setScore] = useState(0);
   const [totalScore, setTotalScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
 
   const wordsToUse = studiedCards && studiedCards.length >= 4 ? studiedCards : FREQ_WORDS.slice(0, 10);
-  const huntText = HUNT_TEXTS[textIdx];
 
-  // Find which phrases from wordsToUse appear in this text
-  const hiddenPhrases = wordsToUse.filter(w =>
-    huntText.text.toLowerCase().includes(w.word.toLowerCase())
-  );
+  const generateHuntText = async () => {
+    setLoading(true);
+    setHuntText(null);
+    setFound([]);
+    setFinished(false);
+    setShowResult(false);
 
-  // Split text into clickable tokens (words + spaces/punctuation)
+    const phraseList = wordsToUse.map(w => `"${w.word}"`).join(", ");
+    const sys = `You are writing a short English text for a language learning game.
+Write a natural paragraph (5-6 sentences, B1 level) that includes AT LEAST 5 of these exact phrases: ${phraseList}
+Use the phrases EXACTLY as written.
+Output ONLY the paragraph text, nothing else.`;
+
+    const reply = await callClaude([{ role: "user", content: "Write the paragraph now." }], sys);
+    setHuntText(reply.trim());
+    setLoading(false);
+  };
+
+  // Auto-generate on mount
+  useEffect(() => { generateHuntText(); }, []);
+
+  const hiddenPhrases = huntText
+    ? wordsToUse.filter(w => huntText.toLowerCase().includes(w.word.toLowerCase()))
+    : [];
+
   const tokenize = (text) => {
+    if (!text) return [];
     const tokens = [];
     let i = 0;
+    const sorted = [...hiddenPhrases].sort((a, b) => b.word.length - a.word.length);
     while (i < text.length) {
-      // Try to match longest phrase first
       let matched = null;
-      for (const w of hiddenPhrases.sort((a, b) => b.word.length - a.word.length)) {
+      for (const w of sorted) {
         if (text.slice(i).toLowerCase().startsWith(w.word.toLowerCase())) {
           matched = { text: text.slice(i, i + w.word.length), phrase: w };
           break;
@@ -1317,7 +1310,6 @@ function PhraseHuntModule({ studiedCards }) {
         tokens.push(matched);
         i += matched.text.length;
       } else {
-        // regular character
         if (tokens.length > 0 && !tokens[tokens.length - 1].phrase) {
           tokens[tokens.length - 1].text += text[i];
         } else {
@@ -1329,39 +1321,35 @@ function PhraseHuntModule({ studiedCards }) {
     return tokens;
   };
 
-  const tokens = tokenize(huntText.text);
+  const tokens = huntText ? tokenize(huntText) : [];
 
   const handleClick = (token) => {
     if (finished || !token.phrase) return;
     const word = token.phrase.word;
     if (found.includes(word)) return;
-    setFound(prev => [...prev, word]);
+    const newFound = [...found, word];
+    setFound(newFound);
     speakText(word, 0.85);
-    // Check if all found
-    if (found.length + 1 >= hiddenPhrases.length) {
-      const s = found.length + 1;
-      setScore(s);
-      setTotalScore(prev => prev + s);
+    if (newFound.length >= hiddenPhrases.length) {
+      setTotalScore(prev => prev + newFound.length);
       setFinished(true);
       setShowResult(true);
     }
   };
 
-  const nextText = () => {
-    const next = (textIdx + 1) % HUNT_TEXTS.length;
-    setTextIdx(next);
-    setFound([]);
-    setWrong([]);
-    setFinished(false);
-    setShowResult(false);
-  };
+  const nextText = () => { generateHuntText(); };
 
   const giveUp = () => {
+    setTotalScore(prev => prev + found.length);
     setFinished(true);
     setShowResult(true);
-    setScore(found.length);
-    setTotalScore(prev => prev + found.length);
   };
+
+  if (loading) return (
+    <div style={{ textAlign: "center", padding: 40 }}>
+      <div style={{ color: "#ff8c00", fontSize: 13, animation: "pulse 1.2s infinite" }}>✍️ Генерирую текст с твоими фразами...</div>
+    </div>
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
