@@ -834,17 +834,12 @@ function ReadingModule({ studiedCards }) {
   const [story, setStory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activePhrase, setActivePhrase] = useState(null);
-  const [shadowMode, setShadowMode] = useState(false);
-  const [shadowStep, setShadowStep] = useState(0);
-
   const wordsToUse = studiedCards && studiedCards.length >= 4 ? studiedCards : null;
 
   const generate = async (t) => {
     setTopic(t);
     setStory(null);
     setActivePhrase(null);
-    setShadowMode(false);
-    setShadowStep(0);
     stopSpeak();
     setLoading(true);
     const s = await generateStory(wordsToUse, t.label);
@@ -933,51 +928,10 @@ function ReadingModule({ studiedCards }) {
             </div>
           </div>
 
-          {/* Shadowing mode */}
-          {!shadowMode ? (
-            <button onClick={() => setShadowMode(true)} style={{ background: "linear-gradient(135deg,#1a0a2a,#0d0617)", border: "1px solid #cc44ff40", borderRadius: 14, padding: "12px", color: "#cc88ff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-              🎙️ Включить режим Shadowing
-            </button>
-          ) : (
-            <div style={{ background: "linear-gradient(135deg,#0d0617,#1a0a2a)", border: "1px solid #cc44ff40", borderRadius: 16, padding: "16px 18px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                <span style={{ color: "#cc88ff", fontWeight: 700, fontSize: 14 }}>🎙️ Режим Shadowing</span>
-                <button onClick={() => { setShadowMode(false); setShadowStep(0); stopSpeak(); }} style={{ marginLeft: "auto", background: "none", border: "1px solid #333", color: "#555", borderRadius: 8, padding: "3px 10px", cursor: "pointer", fontSize: 11 }}>✕ выйти</button>
-              </div>
-
-              {/* Steps */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
-                {[
-                  { icon: "👂", label: "Слушай", desc: "Слушаешь целиком — не повторяй" },
-                  { icon: "👄", label: "Шёпот", desc: "Слушай и тихо повторяй вслед" },
-                  { icon: "🗣️", label: "Вслух", desc: "Говори одновременно с озвучкой" },
-                  { icon: "⚡", label: "Без текста", desc: "Только на слух" },
-                ].map((s, i) => (
-                  <button key={i} onClick={() => { setShadowStep(i); stopSpeak(); if (i === 0 || i === 1) setTimeout(() => speakText(story, i === 0 ? 0.7 : 0.8), 200); }}
-                    style={{ background: shadowStep === i ? "#cc44ff20" : "#0d1117", border: `1px solid ${shadowStep === i ? "#cc44ff60" : "#ffffff10"}`, borderRadius: 10, padding: "8px 4px", cursor: "pointer", textAlign: "center" }}>
-                    <div style={{ fontSize: 18, marginBottom: 3 }}>{s.icon}</div>
-                    <div style={{ color: shadowStep === i ? "#cc88ff" : "#666", fontSize: 10, fontWeight: 700 }}>{s.label}</div>
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ background: "#0a0a1a", border: "1px solid #cc44ff20", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#aaa", marginBottom: 12 }}>
-                {[
-                  "👂 Нажми ▶ и просто слушай — знакомься с текстом",
-                  "👄 Нажми ▶ и шёпотом повторяй вслед за голосом",
-                  "🗣️ Нажми ▶ и говори вслух одновременно с озвучкой",
-                  "⚡ Говори по памяти — текст скрыт, только звук",
-                ][shadowStep]}
-              </div>
-
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => { speakText(story, shadowStep === 0 ? 0.7 : 0.8); }}
-                  style={{ flex: 1, background: "#cc44ff20", border: "1px solid #cc44ff40", borderRadius: 10, padding: "10px", color: "#cc88ff", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>▶ Запустить</button>
-                <button onClick={stopSpeak} style={{ background: "#1a0a0a", border: "1px solid #ff444430", borderRadius: 10, padding: "10px 14px", color: "#ff6666", cursor: "pointer", fontSize: 13 }}>⏹</button>
-                <button onClick={() => speakText(story, 0.55)} style={{ background: "#0a1a0a", border: "1px solid #00ff8820", borderRadius: 10, padding: "10px 12px", color: "#00ff8870", cursor: "pointer", fontSize: 11 }}>🐢</button>
-              </div>
-            </div>
-          )}
+          <div style={{ background: "#0a0a1a", border: "1px solid #cc44ff20", borderRadius: 12, padding: "10px 16px", fontSize: 12, color: "#666", display: "flex", alignItems: "center", gap: 8 }}>
+            <span>🎙️</span>
+            <span>Shadowing: нажми ▶ и повторяй вслух за голосом — копируй ритм и интонацию</span>
+          </div>
         </>
       )}
     </div>
@@ -994,11 +948,23 @@ function DiaryModule() {
   const [addedPhrases, setAddedPhrases] = useState(() => { try { return JSON.parse(localStorage.getItem("diary_added") || "[]"); } catch { return []; } });
   const [view, setView] = useState("write");
 
-  const addToCards = (phrase) => {
+  const isInDeck = (phrase) => {
+    try {
+      const existing = JSON.parse(localStorage.getItem("srs_v5") || "[]");
+      return existing.some(c => c.word === phrase);
+    } catch { return false; }
+  };
+
+  const addToCards = (phrase, translation) => {
     if (addedPhrases.includes(phrase)) return;
     const existing = JSON.parse(localStorage.getItem("srs_v5") || "[]");
-    if (existing.some(c => c.word === phrase)) return;
-    const newCard = { word: phrase, transcription: "", translation: phrase, example: phrase, cefr: "A2", category: "Мой дневник", id: Date.now() + Math.random(), srsLevel: 0, nextReview: Date.now(), reviewed: 0, unlocked: true };
+    if (existing.some(c => c.word === phrase)) {
+      // Already in deck — just mark as added so button shows correctly
+      setAddedPhrases(prev => { const n = [...prev, phrase]; localStorage.setItem("diary_added", JSON.stringify(n)); return n; });
+      return;
+    }
+    const ru = translation && translation !== phrase ? translation : "";
+    const newCard = { word: phrase, transcription: "", translation: ru, example: phrase, cefr: "A2", category: "Мой дневник", id: Date.now() + Math.random(), srsLevel: 0, nextReview: Date.now(), reviewed: 0, unlocked: true };
     localStorage.setItem("srs_v5", JSON.stringify([...existing, newCard]));
     setAddedPhrases(prev => { const n = [...prev, phrase]; localStorage.setItem("diary_added", JSON.stringify(n)); return n; });
   };
@@ -1015,7 +981,7 @@ Respond in this EXACT format:
 [2-3 sentences in Russian praising what's good]
 
 🔧 ИСПРАВЛЕНИЯ
-[Each correction: ❌ original → ✅ corrected (brief Russian explanation)]
+[Each correction: ❌ original → ✅ corrected | RU: русский перевод исправленной фразы]
 If no errors: Ошибок не найдено!
 
 💬 УЛУЧШЕНИЯ СТИЛЯ
@@ -1076,12 +1042,13 @@ If no errors: Ошибок не найдено!
           {(() => {
             const corrections = [];
             feedback.split("\n").forEach(line => {
-              // Match pattern: ❌ wrong → ✅ corrected
-              const m = line.match(/❌.+?→\s*✅\s*(.+?)(?:\s*\(|$)/);
+              // Match: ❌ wrong → ✅ corrected | RU: перевод
+              const m = line.match(/❌.+?→\s*✅\s*(.+?)(?:\s*\|\s*RU:\s*(.+?))?(?:\s*\(|$)/);
               if (m) {
                 const phrase = m[1].trim().replace(/^["']|["']$/g, "");
+                const translation = m[2] ? m[2].trim() : "";
                 if (phrase.length > 2 && phrase.length < 80 && !phrase.includes("ОЦЕНКА") && !phrase.includes("ИСПРАВЛ")) {
-                  corrections.push(phrase);
+                  corrections.push({ phrase, translation });
                 }
               }
             });
@@ -1286,6 +1253,215 @@ KEY WORDS: [3-4 words: word — перевод]`;
   );
 }
 
+
+// ─── PHRASE HUNT MODULE ───────────────────────────────────────────────────────
+
+const HUNT_TEXTS = [
+  {
+    id: 1, cefr: "A2",
+    text: "Every morning I get up at 7 and make coffee. Then I check my phone for messages. I feel tired sometimes, but I need to start working. I have breakfast at 8 and take a shower before I begin my day.",
+  },
+  {
+    id: 2, cefr: "A2",
+    text: "I want to learn English because it opens many doors. I'm going to practise every day. Sometimes I think so, but I'm not sure about my progress. I need to speak more and I'm working on it every evening.",
+  },
+  {
+    id: 3, cefr: "B1",
+    text: "She came up with a great idea for the project, but we had to deal with some problems first. My car broke down on the way to work. It turned out to be a long day. We need to set up a meeting to figure out the next steps.",
+  },
+  {
+    id: 4, cefr: "B1",
+    text: "I've been working on this track all week and I can't give up now. By the way, my friend came up with a great title. Anyway, let me think about the mix. It depends on the tempo. That sounds great to me.",
+  },
+  {
+    id: 5, cefr: "B1",
+    text: "In my opinion, AI music is the future. I used to think it was too complicated, but I picked it up quickly. I've been working with Suno for a year now. Let me get back to you on the details. Good point about the vocals.",
+  },
+  {
+    id: 6, cefr: "B2",
+    text: "To be honest, I couldn't agree more with your approach. On the other hand, having said that, we should consider the risks. As far as I know, the project is on track. In other words, it goes without saying that preparation matters.",
+  },
+];
+
+function PhraseHuntModule({ studiedCards }) {
+  const [textIdx, setTextIdx] = useState(0);
+  const [found, setFound] = useState([]);
+  const [wrong, setWrong] = useState([]);
+  const [finished, setFinished] = useState(false);
+  const [score, setScore] = useState(0);
+  const [totalScore, setTotalScore] = useState(0);
+  const [showResult, setShowResult] = useState(false);
+
+  const wordsToUse = studiedCards && studiedCards.length >= 4 ? studiedCards : FREQ_WORDS.slice(0, 10);
+  const huntText = HUNT_TEXTS[textIdx];
+
+  // Find which phrases from wordsToUse appear in this text
+  const hiddenPhrases = wordsToUse.filter(w =>
+    huntText.text.toLowerCase().includes(w.word.toLowerCase())
+  );
+
+  // Split text into clickable tokens (words + spaces/punctuation)
+  const tokenize = (text) => {
+    const tokens = [];
+    let i = 0;
+    while (i < text.length) {
+      // Try to match longest phrase first
+      let matched = null;
+      for (const w of hiddenPhrases.sort((a, b) => b.word.length - a.word.length)) {
+        if (text.slice(i).toLowerCase().startsWith(w.word.toLowerCase())) {
+          matched = { text: text.slice(i, i + w.word.length), phrase: w };
+          break;
+        }
+      }
+      if (matched) {
+        tokens.push(matched);
+        i += matched.text.length;
+      } else {
+        // regular character
+        if (tokens.length > 0 && !tokens[tokens.length - 1].phrase) {
+          tokens[tokens.length - 1].text += text[i];
+        } else {
+          tokens.push({ text: text[i], phrase: null });
+        }
+        i++;
+      }
+    }
+    return tokens;
+  };
+
+  const tokens = tokenize(huntText.text);
+
+  const handleClick = (token) => {
+    if (finished || !token.phrase) return;
+    const word = token.phrase.word;
+    if (found.includes(word)) return;
+    setFound(prev => [...prev, word]);
+    speakText(word, 0.85);
+    // Check if all found
+    if (found.length + 1 >= hiddenPhrases.length) {
+      const s = found.length + 1;
+      setScore(s);
+      setTotalScore(prev => prev + s);
+      setFinished(true);
+      setShowResult(true);
+    }
+  };
+
+  const nextText = () => {
+    const next = (textIdx + 1) % HUNT_TEXTS.length;
+    setTextIdx(next);
+    setFound([]);
+    setWrong([]);
+    setFinished(false);
+    setShowResult(false);
+  };
+
+  const giveUp = () => {
+    setFinished(true);
+    setShowResult(true);
+    setScore(found.length);
+    setTotalScore(prev => prev + found.length);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div>
+          <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>🔍 Найди фразу</div>
+          <div style={{ color: "#555", fontSize: 11, marginTop: 2 }}>Нажимай на фразы которые узнаёшь</div>
+        </div>
+        <div style={{ marginLeft: "auto", textAlign: "right" }}>
+          <div style={{ color: "#ff8c00", fontSize: 13, fontWeight: 700 }}>⚡ {totalScore}</div>
+          <div style={{ color: "#555", fontSize: 10 }}>всего очков</div>
+        </div>
+      </div>
+
+      {/* Progress */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ flex: 1, height: 4, background: "#1a1a2e", borderRadius: 2, overflow: "hidden" }}>
+          <div style={{ height: "100%", background: "#00ff88", borderRadius: 2, width: `${(found.length / Math.max(hiddenPhrases.length, 1)) * 100}%`, transition: "width 0.3s" }} />
+        </div>
+        <span style={{ color: "#00ff88", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+          {found.length} / {hiddenPhrases.length}
+        </span>
+      </div>
+
+      {/* Text */}
+      <div style={{ background: "#0d1117", border: "1px solid #ffffff12", borderRadius: 16, padding: "20px 18px", lineHeight: 2.2, fontSize: 15 }}>
+        {tokens.map((token, i) => {
+          const isFound = token.phrase && found.includes(token.phrase.word);
+          const isHidden = token.phrase && !found.includes(token.phrase.word);
+          const isFinishedHidden = finished && isHidden;
+
+          return (
+            <span
+              key={i}
+              onClick={() => handleClick(token)}
+              style={{
+                cursor: token.phrase && !found.includes(token.phrase?.word) && !finished ? "pointer" : "default",
+                background: isFound ? "#00ff8825" : isFinishedHidden ? "#ff8c0015" : "transparent",
+                border: isFound ? "1px solid #00ff8860" : isFinishedHidden ? "1px solid #ff8c0040" : "1px solid transparent",
+                borderRadius: 6,
+                padding: isFound || isFinishedHidden ? "1px 4px" : "1px 0",
+                color: isFound ? "#00ff88" : isFinishedHidden ? "#ff8c0080" : "#ddd",
+                fontWeight: isFound ? 700 : 400,
+                transition: "all 0.2s",
+              }}
+            >
+              {token.text}
+            </span>
+          );
+        })}
+      </div>
+
+      {/* Result */}
+      {showResult && (
+        <div style={{ background: found.length === hiddenPhrases.length ? "#0a2a0a" : "#0a0a1a", border: `1px solid ${found.length === hiddenPhrases.length ? "#00ff8840" : "#ff8c0030"}`, borderRadius: 14, padding: "14px 18px", animation: "fadeIn 0.3s ease" }}>
+          <div style={{ color: found.length === hiddenPhrases.length ? "#00ff88" : "#ff8c00", fontWeight: 700, fontSize: 15, marginBottom: 8 }}>
+            {found.length === hiddenPhrases.length ? "🎉 Все фразы найдены!" : `Нашёл ${found.length} из ${hiddenPhrases.length}`}
+          </div>
+          {found.length < hiddenPhrases.length && (
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ color: "#555", fontSize: 11, marginBottom: 6 }}>Пропущенные фразы:</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {hiddenPhrases.filter(p => !found.includes(p.word)).map(p => (
+                  <span key={p.word} style={{ background: "#ff8c0015", border: "1px solid #ff8c0030", borderRadius: 8, padding: "3px 10px", fontSize: 12, color: "#ff8c00" }}>
+                    {p.word}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Hint */}
+      {!finished && hiddenPhrases.length > 0 && (
+        <div style={{ background: "#0a0a0f", border: "1px solid #ffffff06", borderRadius: 10, padding: "8px 14px", fontSize: 11, color: "#444", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>В тексте спрятано {hiddenPhrases.length} твоих фраз</span>
+          <button onClick={giveUp} style={{ background: "none", border: "none", color: "#333", fontSize: 11, cursor: "pointer", textDecoration: "underline" }}>Показать ответы</button>
+        </div>
+      )}
+
+      {/* Buttons */}
+      <div style={{ display: "flex", gap: 10 }}>
+        {finished ? (
+          <button onClick={nextText} style={{ flex: 1, background: "linear-gradient(135deg,#00cc66,#008844)", border: "none", borderRadius: 12, padding: "13px", color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>
+            Следующий текст →
+          </button>
+        ) : (
+          <button onClick={nextText} style={{ flex: 1, background: "#0d1117", border: "1px solid #333", borderRadius: 12, padding: "13px", color: "#666", cursor: "pointer", fontSize: 13 }}>
+            Другой текст
+          </button>
+        )}
+      </div>
+
+    </div>
+  );
+}
+
 // ─── CHAT MODULE ──────────────────────────────────────────────────────────────
 
 function ChatModule() {
@@ -1468,6 +1644,7 @@ export default function App() {
     { id: "cards", label: "Слова", icon: "🧠", badge: due.length },
     { id: "quiz", label: "Игра", icon: "🎮", locked: isLocked },
     { id: "builder", label: "Сборка", icon: "🔤", locked: isLocked },
+    { id: "hunt", label: "Охота", icon: "🔍", locked: isLocked },
     { id: "reading", label: "Текст", icon: "📖", locked: isLocked },
     { id: "diary", label: "Дневник", icon: "✍️" },
     { id: "news", label: "Новости", icon: "📰" },
@@ -1517,8 +1694,19 @@ export default function App() {
 
       {/* Tabs */}
       <div style={{ maxWidth: 600, margin: "0 auto", padding: "12px 16px 0" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(8,1fr)", gap: 4, marginBottom: 20 }}>
-          {tabs.map(t => (
+        {/* Row 1: main learning tabs */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 4, marginBottom: 4 }}>
+          {tabs.slice(0, 5).map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ background: tab === t.id ? "linear-gradient(135deg,#00cc66,#008844)" : "#0d1117", border: tab === t.id ? "none" : "1px solid #ffffff10", borderRadius: 10, padding: "8px 2px", cursor: "pointer", color: tab === t.id ? "#fff" : t.locked ? "#2a2a2a" : "#555", fontSize: 9, fontWeight: 700, transition: "all 0.2s", position: "relative" }}>
+              <div style={{ fontSize: 14, marginBottom: 2 }}>{t.icon}</div>
+              {t.locked ? "🔒" : t.label}
+              {t.badge > 0 && <span style={{ position: "absolute", top: 2, right: 2, background: "#ff4444", color: "#fff", borderRadius: "50%", width: 13, height: 13, fontSize: 7, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900 }}>{t.badge > 9 ? "9+" : t.badge}</span>}
+            </button>
+          ))}
+        </div>
+        {/* Row 2: extra tabs */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 4, marginBottom: 18 }}>
+          {tabs.slice(5).map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{ background: tab === t.id ? "linear-gradient(135deg,#00cc66,#008844)" : "#0d1117", border: tab === t.id ? "none" : "1px solid #ffffff10", borderRadius: 10, padding: "8px 2px", cursor: "pointer", color: tab === t.id ? "#fff" : t.locked ? "#2a2a2a" : "#555", fontSize: 9, fontWeight: 700, transition: "all 0.2s", position: "relative" }}>
               <div style={{ fontSize: 14, marginBottom: 2 }}>{t.icon}</div>
               {t.locked ? "🔒" : t.label}
@@ -1533,6 +1721,7 @@ export default function App() {
           {tab === "builder" && <BuilderModule />}
           {tab === "reading" && <ReadingModule studiedCards={studiedCards} />}
           {tab === "diary" && <DiaryModule />}
+          {tab === "hunt" && <PhraseHuntModule studiedCards={studiedCards} />}
           {tab === "news" && <NewsModule />}
           {tab === "chat" && <ChatModule />}
           {tab === "plan" && <PlanModule />}
