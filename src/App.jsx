@@ -1345,6 +1345,22 @@ Output ONLY the paragraph text, nothing else.`;
     setShowResult(true);
   };
 
+  if (wordsToUse.length < 20) return (
+    <div style={{ textAlign: "center", padding: 40 }}>
+      <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+      <div style={{ color: "#fff", fontSize: 18, fontWeight: 700, marginBottom: 10 }}>Пока рано!</div>
+      <div style={{ color: "#888", fontSize: 13, lineHeight: 1.8 }}>
+        Охота становится интересной когда знаешь много фраз.<br/>
+        Сейчас у тебя <b style={{color:"#4488ff"}}>{wordsToUse.length}</b> из нужных <b style={{color:"#fff"}}>20</b>.<br/>
+        Продолжай учить — скоро откроется!
+      </div>
+      <div style={{ marginTop: 20, height: 6, background: "#1a1a2e", borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ height: "100%", background: "#ff8c00", borderRadius: 3, width: `${(wordsToUse.length / 20) * 100}%`, transition: "width 0.5s" }} />
+      </div>
+      <div style={{ color: "#555", fontSize: 11, marginTop: 6 }}>{wordsToUse.length} / 20 фраз</div>
+    </div>
+  );
+
   if (loading) return (
     <div style={{ textAlign: "center", padding: 40 }}>
       <div style={{ color: "#ff8c00", fontSize: 13, animation: "pulse 1.2s infinite" }}>✍️ Генерирую текст с твоими фразами...</div>
@@ -1632,7 +1648,7 @@ export default function App() {
     { id: "cards", label: "Слова", icon: "🧠", badge: due.length },
     { id: "quiz", label: "Игра", icon: "🎮", locked: isLocked },
     { id: "builder", label: "Сборка", icon: "🔤", locked: isLocked },
-    { id: "hunt", label: "Охота", icon: "🔍", locked: isLocked },
+    { id: "hunt", label: "Охота", icon: "🔍", locked: studiedCards.length < 20 },
     { id: "reading", label: "Текст", icon: "📖", locked: isLocked },
     { id: "diary", label: "Дневник", icon: "✍️" },
     { id: "news", label: "Новости", icon: "📰" },
