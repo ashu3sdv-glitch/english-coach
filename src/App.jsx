@@ -1108,7 +1108,7 @@ KEY WORDS: [3-4 words: word — перевод]`;
   const checkRetelling = async () => {
     if (!retelling.trim() || retelling.trim().length < 10) return;
     setCheckLoading(true); setFeedback(null);
-    const sys = `You are an English teacher. A B1 Russian learner read this article:\n${article}\nAnd wrote: "${retelling}"\n\nRespond in this EXACT format:\n✅ ПОНЯЛ ПРАВИЛЬНО\n[Russian, 1-2 sentences praising what they understood]\n\n🔧 ИСПРАВЛЕНИЯ\n[Each error: ❌ wrong phrase → ✅ corrected phrase (brief Russian explanation)]\nIf no errors write: Ошибок нет!\n\n💡 НОВЫЕ СЛОВА\n[2-3 useful phrases from the article: phrase — перевод]\n\nDo NOT add any retelling or rewrite of the text. Keep it short and focused.`;
+    const sys = `You are an English teacher. A B1 Russian learner read this article:\n${article}\nAnd wrote (by voice dictation): "${retelling}"\n\nIMPORTANT: The learner dictated by voice. Do NOT correct punctuation, capitalization, or missing commas. Only focus on word choice, grammar, and meaning.\n\nRespond in this EXACT format:\n✅ ПОНЯЛ ПРАВИЛЬНО\n[Russian, 1-2 sentences praising what they understood correctly]\n\n🔧 ИСПРАВЛЕНИЯ\n[Only real word/grammar errors: ❌ wrong → ✅ correct (brief Russian explanation)]\nIgnore punctuation and capitalization completely.\nIf no real errors write: Ошибок нет! Отличный пересказ.\n\n💡 НОВЫЕ СЛОВА\n[2-3 useful phrases from the article: phrase — перевод]\n\n📖 ДОСЛОВНЫЙ ПЕРЕВОД\n[Full Russian translation of the original article, sentence by sentence]\n\nKeep it encouraging and brief.`;
     const reply = await callClaude([{ role: "user", content: retelling }], sys);
     setFeedback(reply); setCheckLoading(false);
   };
@@ -1330,7 +1330,11 @@ Output ONLY the paragraph text, nothing else.`;
     const newFound = [...found, word];
     setFound(newFound);
     speakText(word, 0.85);
-    if (newFound.length >= hiddenPhrases.length) {
+    // Compare against actual tokens that have phrases (not hiddenPhrases array)
+    const uniquePhrasesInText = [...new Set(
+      tokens.filter(t => t.phrase).map(t => t.phrase.word)
+    )];
+    if (newFound.length >= uniquePhrasesInText.length) {
       setTotalScore(prev => prev + newFound.length);
       setFinished(true);
       setShowResult(true);
@@ -1385,10 +1389,10 @@ Output ONLY the paragraph text, nothing else.`;
       {/* Progress */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ flex: 1, height: 4, background: "#1a1a2e", borderRadius: 2, overflow: "hidden" }}>
-          <div style={{ height: "100%", background: "#00ff88", borderRadius: 2, width: `${(found.length / Math.max(hiddenPhrases.length, 1)) * 100}%`, transition: "width 0.3s" }} />
+          <div style={{ height: "100%", background: "#00ff88", borderRadius: 2, width: `${(found.length / Math.max([...new Set(tokens.filter(t => t.phrase).map(t => t.phrase.word))].length, 1)) * 100}%`, transition: "width 0.3s" }} />
         </div>
         <span style={{ color: "#00ff88", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
-          {found.length} / {hiddenPhrases.length}
+          {found.length} / {[...new Set(tokens.filter(t => t.phrase).map(t => t.phrase.word))].length}
         </span>
       </div>
 
@@ -1422,29 +1426,32 @@ Output ONLY the paragraph text, nothing else.`;
 
       {/* Result */}
       {showResult && (
-        <div style={{ background: found.length === hiddenPhrases.length ? "#0a2a0a" : "#0a0a1a", border: `1px solid ${found.length === hiddenPhrases.length ? "#00ff8840" : "#ff8c0030"}`, borderRadius: 14, padding: "14px 18px", animation: "fadeIn 0.3s ease" }}>
+        <div style={{ background: found.length >= [...new Set(tokens.filter(t => t.phrase).map(t => t.phrase.word))].length ? "#0a2a0a" : "#0a0a1a", border: `1px solid ${found.length >= [...new Set(tokens.filter(t => t.phrase).map(t => t.phrase.word))].length ? "#00ff8840" : "#ff8c0030"}`, borderRadius: 14, padding: "14px 18px", animation: "fadeIn 0.3s ease" }}>
           <div style={{ color: found.length === hiddenPhrases.length ? "#00ff88" : "#ff8c00", fontWeight: 700, fontSize: 15, marginBottom: 8 }}>
             {found.length === hiddenPhrases.length ? "🎉 Все фразы найдены!" : `Нашёл ${found.length} из ${hiddenPhrases.length}`}
           </div>
-          {found.length < hiddenPhrases.length && (
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ color: "#555", fontSize: 11, marginBottom: 6 }}>Пропущенные фразы:</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {hiddenPhrases.filter(p => !found.includes(p.word)).map(p => (
-                  <span key={p.word} style={{ background: "#ff8c0015", border: "1px solid #ff8c0030", borderRadius: 8, padding: "3px 10px", fontSize: 12, color: "#ff8c00" }}>
-                    {p.word}
-                  </span>
-                ))}
+          {(() => {
+            const uniqueInText = [...new Set(tokens.filter(t => t.phrase).map(t => t.phrase.word))];
+            const missed = uniqueInText.filter(w => !found.includes(w));
+            if (!missed.length) return null;
+            return (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ color: "#555", fontSize: 11, marginBottom: 6 }}>Пропущенные фразы:</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {missed.map(w => (
+                    <span key={w} style={{ background: "#ff8c0015", border: "1px solid #ff8c0030", borderRadius: 8, padding: "3px 10px", fontSize: 12, color: "#ff8c00" }}>{w}</span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
       {/* Hint */}
       {!finished && hiddenPhrases.length > 0 && (
         <div style={{ background: "#0a0a0f", border: "1px solid #ffffff06", borderRadius: 10, padding: "8px 14px", fontSize: 11, color: "#444", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span>В тексте спрятано {hiddenPhrases.length} твоих фраз</span>
+          <span>В тексте спрятано {[...new Set(tokens.filter(t => t.phrase).map(t => t.phrase.word))].length} твоих фраз</span>
           <button onClick={giveUp} style={{ background: "none", border: "none", color: "#333", fontSize: 11, cursor: "pointer", textDecoration: "underline" }}>Показать ответы</button>
         </div>
       )}
@@ -1734,3 +1741,4 @@ export default function App() {
     </div>
   );
 }
+
