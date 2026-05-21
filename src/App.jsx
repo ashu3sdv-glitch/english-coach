@@ -171,8 +171,8 @@ function updateCard(card, quality) {
 
 // ─── HOOKS ───────────────────────────────────────────────────────────────────
 
-const NEW_PER_DAY = 5;
 function todayKey() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
+function getNewPerDay() { try { return parseInt(localStorage.getItem("new_per_day") || "3"); } catch { return 3; } }
 
 function useSRS() {
   const [cards, setCards] = useState(() => {
@@ -189,7 +189,7 @@ function useSRS() {
   useEffect(() => { try { localStorage.setItem("srs_daily", JSON.stringify({ key: todayKey(), count: unlockedToday })); } catch {} }, [unlockedToday]);
 
   const unlockNewCards = useCallback(() => {
-    const canUnlock = NEW_PER_DAY - unlockedToday;
+    const canUnlock = getNewPerDay() - unlockedToday;
     if (canUnlock <= 0) return;
     let unlocked = 0;
     setCards(prev => {
@@ -209,7 +209,7 @@ function useSRS() {
   const unlockedCards = cards.filter(c => c.unlocked);
   const due = getCardsDue(unlockedCards);
   const mastered = cards.filter(c => (c.srsLevel || 0) >= 4).length;
-  const newAvailable = NEW_PER_DAY - unlockedToday;
+  const newAvailable = getNewPerDay() - unlockedToday;
   const totalUnlocked = unlockedCards.length;
   return { cards, unlockedCards, due, mastered, reviewCard, unlockNewCards, newAvailable, totalUnlocked };
 }
@@ -371,9 +371,9 @@ function SRSModule({ due, mastered, cards, reviewCard, unlockNewCards, newAvaila
     <div style={{ textAlign: "center", padding: "30px 20px" }}>
       <div style={{ fontSize: 52, marginBottom: 16 }}>👋</div>
       <div style={{ color: "#fff", fontSize: 20, fontWeight: 700, marginBottom: 10 }}>Начнём учить фразы!</div>
-      <div style={{ color: "#888", fontSize: 13, marginBottom: 24, lineHeight: 1.7 }}>Каждый день открываются <b style={{ color: "#00ff88" }}>5 новых фраз</b>.<br />Изучи → повтори → переходи в игру.</div>
+      <div style={{ color: "#888", fontSize: 13, marginBottom: 24, lineHeight: 1.7 }}>Каждый день открываются <b style={{ color: "#00ff88" }}>{getNewPerDay()} новых фраз</b>.<br />Изучи → повтори → переходи в игру.</div>
       <button onClick={unlockNewCards} style={{ background: "linear-gradient(135deg,#00cc66,#008844)", border: "none", borderRadius: 14, padding: "14px 32px", color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-        🚀 Открыть первые {NEW_PER_DAY} фраз
+        🚀 Открыть первые {getNewPerDay()} фраз
       </button>
     </div>
   );
@@ -394,7 +394,7 @@ function SRSModule({ due, mastered, cards, reviewCard, unlockNewCards, newAvaila
       ) : (
         <div style={{ background: "#0d1117", border: "1px solid #ffffff10", borderRadius: 16, padding: 18, textAlign: "center" }}>
           <div style={{ color: "#555", fontSize: 13 }}>Лимит новых фраз на сегодня исчерпан</div>
-          <div style={{ color: "#444", fontSize: 11, marginTop: 4 }}>Завтра откроется ещё {NEW_PER_DAY} новых фраз</div>
+          <div style={{ color: "#444", fontSize: 11, marginTop: 4 }}>Завтра откроется ещё {getNewPerDay()} новых фраз</div>
         </div>
       )}
       <div style={{ background: "#0d1117", border: "1px solid #ffffff08", borderRadius: 14, padding: "14px 18px" }}>
@@ -416,6 +416,25 @@ function SRSModule({ due, mastered, cards, reviewCard, unlockNewCards, newAvaila
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ color: "#888", fontSize: 12 }}>Повторить: <b style={{ color: "#fff" }}>{due.length}</b></span>
         <span style={{ color: "#888", fontSize: 12 }}>В работе: <b style={{ color: "#4488ff" }}>{totalUnlocked}</b> · Освоено: <b style={{ color: "#00ff88" }}>{mastered}</b></span>
+      </div>
+
+      {/* Daily phrase count setting */}
+      <div style={{ background: "#0d1117", border: "1px solid #ffffff08", borderRadius: 12, padding: "10px 14px" }}>
+        <div style={{ color: "#555", fontSize: 10, textTransform: "uppercase", letterSpacing: 2, marginBottom: 8 }}>Новых фраз в день</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {[1, 2, 3, 5].map(n => {
+            const current = getNewPerDay();
+            return (
+              <button key={n} onClick={() => { localStorage.setItem("new_per_day", String(n)); window.location.reload(); }}
+                style={{ flex: 1, background: current === n ? "#00ff8820" : "#161b22", border: `1px solid ${current === n ? "#00ff8860" : "#ffffff10"}`, borderRadius: 8, padding: "7px 4px", color: current === n ? "#00ff88" : "#555", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                {n}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ color: "#444", fontSize: 10, marginTop: 6 }}>
+          {getNewPerDay() === 1 ? "Одна фраза — но изучишь хорошо" : getNewPerDay() === 2 ? "Спокойный темп" : getNewPerDay() === 3 ? "Оптимальный темп" : "Интенсивный темп"}
+        </div>
       </div>
       <div style={{ background: flipped ? "linear-gradient(135deg,#0a2a1a,#0d1a0d)" : "linear-gradient(135deg,#0a0a1a,#0d0d2a)", border: `1px solid ${flipped ? "#00ff8850" : "#ffffff15"}`, borderRadius: 20, padding: "26px 22px", minHeight: 170, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 10, transition: "all 0.3s" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -546,8 +565,14 @@ function QuizModule({ studiedCards }) {
       setShake(true);
       setTimeout(() => {
         setShake(false);
-        if (mode === "timed") { setSelected(null); setQuestion(safeCards ? buildQuestion(safeCards) : null); }
-      }, 500);
+        setSelected(null);
+        // Repeat same question with reshuffled options until correct
+        setQuestion(prev => ({
+          ...prev,
+          options: prev.options.sort(() => Math.random() - 0.5)
+        }));
+        if (mode === "timed") startTimer();
+      }, 1200);
     }
   };
 
@@ -638,7 +663,9 @@ function QuizModule({ studiedCards }) {
         })}
       </div>
       {selected && !selected.isCorrect && (
-        <button onClick={next} style={{ background: "linear-gradient(135deg,#333,#222)", border: "none", borderRadius: 14, padding: "13px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Понял, следующий →</button>
+        <div style={{ textAlign: "center", color: "#ff6666", fontSize: 13, padding: "8px", animation: "fadeIn 0.2s ease" }}>
+          ✗ Не то — попробуем ещё раз...
+        </div>
       )}
       {selected && selected.isCorrect && (
         <div style={{ textAlign: "center", color: "#00ff88", fontSize: 13, animation: "fadeIn 0.2s ease" }}>✓ Переходим дальше...</div>
@@ -649,8 +676,7 @@ function QuizModule({ studiedCards }) {
 
 // ─── BUILDER MODULE ───────────────────────────────────────────────────────────
 
-function BuilderModule() {
-  const [levelFilter, setLevelFilter] = useState("A2");
+function BuilderModule({ studiedCards }) {
   const [current, setCurrent] = useState(null);
   const [wordBank, setWordBank] = useState([]);
   const [assembled, setAssembled] = useState([]);
@@ -659,28 +685,62 @@ function BuilderModule() {
   const [total, setTotal] = useState(0);
   const [listened, setListened] = useState(false);
   const [errorCounts, setErrorCounts] = useState({});
-  const [queue, setQueue] = useState([]);
   const [mistakeOnCurrent, setMistakeOnCurrent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [generatedSentences, setGeneratedSentences] = useState([]);
+  const [queue, setQueue] = useState([]);
 
-  const filtered = BUILDER_SENTENCES.filter(s => s.cefr === levelFilter);
+  const wordsToUse = studiedCards && studiedCards.length >= 4 ? studiedCards : FREQ_WORDS.slice(0, 10);
 
-  const buildQueue = (errors) => {
-    const q = [];
-    filtered.forEach(s => {
-      const e = errors[s.id] || 0;
-      const weight = e === 0 ? 1 : e === 1 ? 2 : 3;
-      for (let i = 0; i < weight; i++) q.push(s);
-    });
-    return shuffleArr(q);
+  const generateSentences = async () => {
+    setLoading(true);
+    const phraseList = wordsToUse.map(w => `"${w.word}"`).join(", ");
+    const sys = `You are creating sentence building exercises for English learners.
+Generate 6 short English sentences (4-7 words each) using these phrases: ${phraseList}
+Each sentence MUST contain at least one of these exact phrases.
+Use SIMPLE vocabulary, B1 level.
+
+Output ONLY a JSON array like this:
+[
+  {"words": ["I", "make", "coffee", "every", "morning"], "hint": "Я делаю кофе каждое утро"},
+  {"words": ["Go", "ahead", "I'm", "listening"], "hint": "Продолжай, я слушаю"}
+]
+No explanation, just the JSON array.`;
+
+    const reply = await callClaude([{ role: "user", content: "Generate the sentences now." }], sys);
+    try {
+      const clean = reply.replace(/\`\`\`json|\`\`\`/g, "").trim();
+      const parsed = JSON.parse(clean);
+      const withIds = parsed.map((s, i) => ({ ...s, id: Date.now() + i }));
+      setGeneratedSentences(withIds);
+      loadSentence(withIds, null, {});
+    } catch (e) {
+      // fallback to static if parse fails
+      const fallback = BUILDER_SENTENCES.filter(s =>
+        wordsToUse.some(w => s.words.join(" ").toLowerCase().includes(w.word.toLowerCase()))
+      ).slice(0, 6);
+      setGeneratedSentences(fallback);
+      if (fallback.length > 0) loadSentence(fallback, null, {});
+    }
+    setLoading(false);
   };
 
-  const loadFromQueue = (currentId, errors) => {
-    let q = queue.filter(s => s.id !== currentId);
-    if (q.length === 0) q = buildQueue(errors).filter(s => s.id !== currentId);
-    const next = q[0];
-    setQueue(q.slice(1));
+  const loadSentence = (sentences, excludeId, errors) => {
+    const pool = (sentences || generatedSentences).filter(s => s.id !== excludeId);
+    if (pool.length === 0) {
+      generateSentences();
+      return;
+    }
+    // Weight by errors
+    const weighted = [];
+    pool.forEach(s => {
+      const e = errors[s.id] || 0;
+      const w = e === 0 ? 1 : e === 1 ? 2 : 3;
+      for (let i = 0; i < w; i++) weighted.push(s);
+    });
+    const next = weighted[Math.floor(Math.random() * weighted.length)];
     setCurrent(next);
-    setWordBank(shuffleArr(next.words.map((w, i) => ({ w, key: i }))));
+    setWordBank(shuffleArr(next.words.map((w, i) => ({ w, key: `${next.id}-${i}` }))));
     setAssembled([]);
     setCompleted(false);
     setListened(false);
@@ -688,17 +748,11 @@ function BuilderModule() {
   };
 
   useEffect(() => {
-    if (filtered.length > 0) {
-      const q = buildQueue({});
-      setQueue(q.slice(1));
-      setCurrent(q[0]);
-      setWordBank(shuffleArr(q[0].words.map((w, i) => ({ w, key: i }))));
-      setAssembled([]);
-      setCompleted(false);
-      setMistakeOnCurrent(false);
-      setErrorCounts({});
-    }
-  }, [levelFilter]);
+    generateSentences();
+    setErrorCounts({});
+    setScore(0);
+    setTotal(0);
+  }, []);
 
   const getWordStatus = (item, idx) => {
     if (!current) return "neutral";
@@ -717,7 +771,7 @@ function BuilderModule() {
         setTotal(t => t + 1);
         speakText(current.words.join(" "), 0.85);
         // Auto-advance after 1.2 seconds
-        setTimeout(() => loadFromQueue(current.id, errorCounts), 1200);
+        setTimeout(() => loadSentence(null, current.id, errorCounts), 1200);
       } else if (!mistakeOnCurrent) {
         setMistakeOnCurrent(true);
         setErrorCounts(prev => ({ ...prev, [current.id]: Math.min((prev[current.id] || 0) + 1, 3) }));
@@ -729,6 +783,7 @@ function BuilderModule() {
   const removeWord = (item) => { if (completed) return; setAssembled(prev => prev.filter(w => w.key !== item.key)); setWordBank(prev => shuffleArr([...prev, item])); };
   const reset = () => { setWordBank(shuffleArr(current.words.map((w, i) => ({ w, key: i })))); setAssembled([]); setCompleted(false); };
 
+  if (loading) return <div style={{ textAlign: "center", padding: 40 }}><div style={{ color: "#cc44ff", fontSize: 13 }}>✍️ Генерирую предложения из твоих фраз...</div></div>;
   if (!current) return <div style={{ color: "#555", textAlign: "center", padding: 40 }}>Загрузка...</div>;
 
   const accuracy = total > 0 ? Math.round(score / total * 100) : 0;
@@ -744,12 +799,11 @@ function BuilderModule() {
           </div>
         ))}
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        {["A2","B1","B2"].map(lvl => {
-          const lc = lvl === "A2" ? "#4488ff" : lvl === "B1" ? "#00ff88" : "#cc44ff";
-          return <button key={lvl} onClick={() => setLevelFilter(lvl)} style={{ background: levelFilter === lvl ? lc + "20" : "#0d1117", border: `1px solid ${levelFilter === lvl ? lc + "60" : "#ffffff15"}`, borderRadius: 10, padding: "7px 16px", color: levelFilter === lvl ? lc : "#555", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{lvl}</button>;
-        })}
-        <div style={{ marginLeft: "auto", color: "#555", fontSize: 11, display: "flex", alignItems: "center" }}>{filtered.length} предложений</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ color: "#555", fontSize: 11 }}>Предложения из твоих фраз</span>
+        <button onClick={generateSentences} disabled={loading} style={{ background: "none", border: "1px solid #cc44ff30", borderRadius: 8, padding: "4px 12px", color: "#cc44ff", fontSize: 11, cursor: loading ? "not-allowed" : "pointer" }}>
+          {loading ? "⏳" : "🔄 Новые"}
+        </button>
       </div>
       <div style={{ background: "#0d1117", border: "1px solid #ffffff08", borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
         <span style={{ color: "#555", fontSize: 12 }}>🇷🇺 {current.hint}</span>
@@ -789,7 +843,7 @@ function BuilderModule() {
         ) : (
           <>
             <button onClick={reset} style={{ flex: 1, background: "#0d1117", border: "1px solid #333", borderRadius: 12, padding: "13px", color: "#666", cursor: "pointer", fontSize: 13 }}>↺ Сбросить</button>
-            <button onClick={() => { setTotal(t => t + 1); loadFromQueue(current.id, errorCounts); }} style={{ background: "#0d1117", border: "1px solid #333", borderRadius: 12, padding: "13px 16px", color: "#444", cursor: "pointer", fontSize: 13 }}>Пропустить</button>
+            <button onClick={() => { setTotal(t => t + 1); loadSentence(null, current.id, errorCounts); }} style={{ background: "#0d1117", border: "1px solid #333", borderRadius: 12, padding: "13px 16px", color: "#444", cursor: "pointer", fontSize: 13 }}>Пропустить</button>
           </>
         )}
       </div>
@@ -1113,11 +1167,20 @@ KEY WORDS: [3-4 words: word — перевод]`;
     setFeedback(reply); setCheckLoading(false);
   };
 
+  const isInDeck = (word) => {
+    try {
+      const existing = JSON.parse(localStorage.getItem("srs_v5") || "[]");
+      return existing.some(c => c.word === word);
+    } catch { return false; }
+  };
+
   const addToCards = (word, translation) => {
     if (addedWords.includes(word)) return;
     const existing = JSON.parse(localStorage.getItem("srs_v5") || "[]");
-    const newCard = { word, transcription: "", translation, example: word, cefr: "B1", category: "Новости", id: Date.now() + Math.random(), srsLevel: 0, nextReview: Date.now(), reviewed: 0, unlocked: true };
-    localStorage.setItem("srs_v5", JSON.stringify([...existing, newCard]));
+    if (!existing.some(c => c.word === word)) {
+      const newCard = { word, transcription: "", translation, example: word, cefr: "B1", category: "Новости", id: Date.now() + Math.random(), srsLevel: 0, nextReview: Date.now(), reviewed: 0, unlocked: true };
+      localStorage.setItem("srs_v5", JSON.stringify([...existing, newCard]));
+    }
     setAddedWords(prev => [...prev, word]);
   };
 
@@ -1188,9 +1251,16 @@ KEY WORDS: [3-4 words: word — перевод]`;
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
                   <span style={{ color: "#ff8c00", fontWeight: 700, fontSize: 13, minWidth: 100 }}>{kw.word}</span>
                   <span style={{ color: "#666", fontSize: 12 }}>{kw.translation}</span>
-                  <button onClick={() => addToCards(kw.word, kw.translation)} disabled={addedWords.includes(kw.word)} style={{ marginLeft: "auto", background: addedWords.includes(kw.word) ? "#003300" : "#00ff8810", border: `1px solid ${addedWords.includes(kw.word) ? "#00ff8840" : "#00ff8820"}`, borderRadius: 6, padding: "3px 10px", color: addedWords.includes(kw.word) ? "#00ff88" : "#00cc66", fontSize: 10, fontWeight: 700, cursor: addedWords.includes(kw.word) ? "default" : "pointer" }}>
-                    {addedWords.includes(kw.word) ? "✓" : "+ в словарь"}
-                  </button>
+                  {(() => {
+                    const added = addedWords.includes(kw.word) || isInDeck(kw.word);
+                    return added ? (
+                      <span style={{ color: "#555", fontSize: 10, marginLeft: "auto" }}>✓ в словаре</span>
+                    ) : (
+                      <button onClick={() => addToCards(kw.word, kw.translation)} style={{ marginLeft: "auto", background: "#00ff8810", border: "1px solid #00ff8820", borderRadius: 6, padding: "3px 10px", color: "#00cc66", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
+                        + в словарь
+                      </button>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
@@ -1236,10 +1306,16 @@ KEY WORDS: [3-4 words: word — перевод]`;
                           <span style={{ color: "#ff8c00", fontWeight: 700, fontSize: 13 }}>{w.word}</span>
                           {w.translation && <span style={{ color: "#666", fontSize: 12, marginLeft: 8 }}>{w.translation}</span>}
                         </div>
-                        <button onClick={() => addToCards(w.word, w.translation)} disabled={addedWords.includes(w.word)}
-                          style={{ background: addedWords.includes(w.word) ? "#003300" : "#00ff8810", border: `1px solid ${addedWords.includes(w.word) ? "#00ff8840" : "#00ff8820"}`, borderRadius: 8, padding: "4px 12px", color: addedWords.includes(w.word) ? "#00ff88" : "#00cc66", fontSize: 11, fontWeight: 700, cursor: addedWords.includes(w.word) ? "default" : "pointer" }}>
-                          {addedWords.includes(w.word) ? "✓" : "+ в словарь"}
-                        </button>
+                        {(() => {
+                          const added = addedWords.includes(w.word) || isInDeck(w.word);
+                          return added ? (
+                            <span style={{ color: "#555", fontSize: 11 }}>✓ в словаре</span>
+                          ) : (
+                            <button onClick={() => addToCards(w.word, w.translation)} style={{ background: "#00ff8810", border: "1px solid #00ff8820", borderRadius: 8, padding: "4px 12px", color: "#00cc66", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                              + в словарь
+                            </button>
+                          );
+                        })()}
                       </div>
                     ))}
                   </div>
@@ -1729,7 +1805,7 @@ export default function App() {
         <div style={{ animation: "fadeIn 0.3s ease" }}>
           {tab === "cards" && <SRSModule due={due} mastered={mastered} cards={cards} reviewCard={reviewCard} unlockNewCards={unlockNewCards} newAvailable={newAvailable} totalUnlocked={totalUnlocked} recordSession={recordSession} />}
           {tab === "quiz" && <QuizModule studiedCards={studiedCards} />}
-          {tab === "builder" && <BuilderModule />}
+          {tab === "builder" && <BuilderModule studiedCards={studiedCards} />}
           {tab === "reading" && <ReadingModule studiedCards={studiedCards} />}
           {tab === "diary" && <DiaryModule />}
           {tab === "hunt" && <PhraseHuntModule studiedCards={studiedCards} />}
