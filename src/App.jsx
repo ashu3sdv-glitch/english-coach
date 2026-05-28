@@ -189,6 +189,7 @@ function useSRS() {
   useEffect(() => { try { localStorage.setItem("srs_daily", JSON.stringify({ key: todayKey(), count: unlockedToday })); } catch {} }, [unlockedToday]);
 
   const unlockNewCards = useCallback(() => {
+    if (localStorage.getItem("pause_new") === "1") return;
     const canUnlock = getNewPerDay() - unlockedToday;
     if (canUnlock <= 0) return;
     let unlocked = 0;
@@ -372,9 +373,13 @@ function SRSModule({ due, mastered, cards, reviewCard, unlockNewCards, newAvaila
       <div style={{ fontSize: 52, marginBottom: 16 }}>👋</div>
       <div style={{ color: "#fff", fontSize: 20, fontWeight: 700, marginBottom: 10 }}>Начнём учить фразы!</div>
       <div style={{ color: "#888", fontSize: 13, marginBottom: 24, lineHeight: 1.7 }}>Каждый день открываются <b style={{ color: "#00ff88" }}>{getNewPerDay()} новых фраз</b>.<br />Изучи → повтори → переходи в игру.</div>
-      <button onClick={unlockNewCards} style={{ background: "linear-gradient(135deg,#00cc66,#008844)", border: "none", borderRadius: 14, padding: "14px 32px", color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-        🚀 Открыть первые {getNewPerDay()} фраз
-      </button>
+      {localStorage.getItem("pause_new") !== "1" ? (
+        <button onClick={unlockNewCards} style={{ background: "linear-gradient(135deg,#00cc66,#008844)", border: "none", borderRadius: 14, padding: "14px 32px", color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+          🚀 Открыть первые {getNewPerDay()} фраз
+        </button>
+      ) : (
+        <div style={{ color: "#ff6666", fontSize: 13 }}>⏸ Новые фразы на паузе</div>
+      )}
     </div>
   );
 
@@ -418,24 +423,44 @@ function SRSModule({ due, mastered, cards, reviewCard, unlockNewCards, newAvaila
         <span style={{ color: "#888", fontSize: 12 }}>В работе: <b style={{ color: "#4488ff" }}>{totalUnlocked}</b> · Освоено: <b style={{ color: "#00ff88" }}>{mastered}</b></span>
       </div>
 
-      {/* Daily phrase count setting */}
-      <div style={{ background: "#0d1117", border: "1px solid #ffffff08", borderRadius: 12, padding: "10px 14px" }}>
-        <div style={{ color: "#555", fontSize: 10, textTransform: "uppercase", letterSpacing: 2, marginBottom: 8 }}>Новых фраз в день</div>
-        <div style={{ display: "flex", gap: 6 }}>
-          {[1, 2, 3, 5].map(n => {
-            const current = getNewPerDay();
-            return (
-              <button key={n} onClick={() => { localStorage.setItem("new_per_day", String(n)); window.location.reload(); }}
-                style={{ flex: 1, background: current === n ? "#00ff8820" : "#161b22", border: `1px solid ${current === n ? "#00ff8860" : "#ffffff10"}`, borderRadius: 8, padding: "7px 4px", color: current === n ? "#00ff88" : "#555", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-                {n}
+      {/* Daily phrase count + pause */}
+      {(() => {
+        const isPaused = localStorage.getItem("pause_new") === "1";
+        return (
+          <div style={{ background: isPaused ? "#1a0a0a" : "#0d1117", border: `1px solid ${isPaused ? "#ff444430" : "#ffffff08"}`, borderRadius: 12, padding: "10px 14px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <div style={{ color: "#555", fontSize: 10, textTransform: "uppercase", letterSpacing: 2 }}>Новых фраз в день</div>
+              <button onClick={() => { localStorage.setItem("pause_new", isPaused ? "0" : "1"); window.location.reload(); }}
+                style={{ background: isPaused ? "#ff444420" : "#0a1a0a", border: `1px solid ${isPaused ? "#ff444460" : "#00ff8830"}`, borderRadius: 8, padding: "3px 10px", color: isPaused ? "#ff6666" : "#00ff88", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
+                {isPaused ? "⏸ Пауза" : "▶ Активно"}
               </button>
-            );
-          })}
-        </div>
-        <div style={{ color: "#444", fontSize: 10, marginTop: 6 }}>
-          {getNewPerDay() === 1 ? "Одна фраза — но изучишь хорошо" : getNewPerDay() === 2 ? "Спокойный темп" : getNewPerDay() === 3 ? "Оптимальный темп" : "Интенсивный темп"}
-        </div>
-      </div>
+            </div>
+            {isPaused ? (
+              <div style={{ color: "#ff6666", fontSize: 12, lineHeight: 1.6 }}>
+                Новые фразы приостановлены.<br/>
+                <span style={{ color: "#555", fontSize: 11 }}>Отрабатывай текущие — нажми ▶ Активно когда готов.</span>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[1, 2, 3, 5].map(n => {
+                    const cur = getNewPerDay();
+                    return (
+                      <button key={n} onClick={() => { localStorage.setItem("new_per_day", String(n)); window.location.reload(); }}
+                        style={{ flex: 1, background: cur === n ? "#00ff8820" : "#161b22", border: `1px solid ${cur === n ? "#00ff8860" : "#ffffff10"}`, borderRadius: 8, padding: "7px 4px", color: cur === n ? "#00ff88" : "#555", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                        {n}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div style={{ color: "#444", fontSize: 10, marginTop: 6 }}>
+                  {getNewPerDay() === 1 ? "Одна фраза — изучишь хорошо" : getNewPerDay() === 2 ? "Спокойный темп" : getNewPerDay() === 3 ? "Оптимальный темп" : "Интенсивный темп"}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
       <div style={{ background: flipped ? "linear-gradient(135deg,#0a2a1a,#0d1a0d)" : "linear-gradient(135deg,#0a0a1a,#0d0d2a)", border: `1px solid ${flipped ? "#00ff8850" : "#ffffff15"}`, borderRadius: 20, padding: "26px 22px", minHeight: 170, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 10, transition: "all 0.3s" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ color: "#555", fontSize: 10, letterSpacing: 2, textTransform: "uppercase" }}>фраза</span>
@@ -1028,24 +1053,32 @@ function DiaryModule() {
   const submit = async () => {
     if (!text.trim() || text.trim().length < 10) return;
     setLoading(true); setFeedback(null);
-    const sys = `You are a friendly English teacher correcting a Russian learner's diary entry.
+    try {
+      const sys = `You are a friendly English teacher correcting a Russian learner's diary entry.
 Respond in this EXACT format:
 
-✅ ОБЩАЯ ОЦЕНКА
-[2-3 sentences in Russian praising what's good]
+ОБЩАЯ ОЦЕНКА
+[2-3 sentences in Russian praising what is good]
 
-🔧 ИСПРАВЛЕНИЯ
-[Each correction: ❌ original → ✅ corrected | RU: русский перевод исправленной фразы]
-If no errors: Ошибок не найдено!
+ИСПРАВЛЕНИЯ
+[Each correction: WRONG: original text CORRECT: fixed text RU: Russian translation]
+If no errors write: Oshibok net!
 
-💬 УЛУЧШЕНИЯ СТИЛЯ
+УЛУЧШЕНИЯ СТИЛЯ
 [2-3 suggestions in Russian with examples]
 
-📝 ИСПРАВЛЕННЫЙ ТЕКСТ
+ИСПРАВЛЕННЫЙ ТЕКСТ
 [Full corrected version]`;
-    const reply = await callClaude([{ role: "user", content: text }], sys);
-    save({ date: new Date().toLocaleDateString("ru-RU"), text, feedback: reply });
-    setFeedback(reply);
+      const reply = await callClaude([{ role: "user", content: text }], sys);
+      if (reply && reply.length > 10) {
+        save({ date: new Date().toLocaleDateString("ru-RU"), text, feedback: reply });
+        setFeedback(reply);
+      } else {
+        setFeedback("Не удалось получить ответ. Попробуй ещё раз.");
+      }
+    } catch (err) {
+      setFeedback("Ошибка соединения. Проверь интернет и попробуй ещё раз.");
+    }
     setLoading(false);
   };
 
@@ -1137,8 +1170,6 @@ function NewsModule() {
   const [retelling, setRetelling] = useState("");
   const [feedback, setFeedback] = useState(null);
   const [checkLoading, setCheckLoading] = useState(false);
-  const [addedWords, setAddedWords] = useState([]);
-
   const TOPICS = [
     { id: "tech", label: "Технологии", icon: "💻" },
     { id: "science", label: "Наука", icon: "🔬" },
@@ -1167,22 +1198,7 @@ KEY WORDS: [3-4 words: word — перевод]`;
     setFeedback(reply); setCheckLoading(false);
   };
 
-  const isInDeck = (word) => {
-    try {
-      const existing = JSON.parse(localStorage.getItem("srs_v5") || "[]");
-      return existing.some(c => c.word === word);
-    } catch { return false; }
-  };
 
-  const addToCards = (word, translation) => {
-    if (addedWords.includes(word)) return;
-    const existing = JSON.parse(localStorage.getItem("srs_v5") || "[]");
-    if (!existing.some(c => c.word === word)) {
-      const newCard = { word, transcription: "", translation, example: word, cefr: "B1", category: "Новости", id: Date.now() + Math.random(), srsLevel: 0, nextReview: Date.now(), reviewed: 0, unlocked: true };
-      localStorage.setItem("srs_v5", JSON.stringify([...existing, newCard]));
-    }
-    setAddedWords(prev => [...prev, word]);
-  };
 
   const parseArticle = (text) => {
     const headline = text.match(/HEADLINE:\s*(.+)/)?.[1]?.trim() || "";
@@ -1248,19 +1264,9 @@ KEY WORDS: [3-4 words: word — перевод]`;
             <div style={{ background: "#0a0a0f", border: "1px solid #ffffff08", borderRadius: 12, padding: "12px 16px" }}>
               <div style={{ color: "#555", fontSize: 10, textTransform: "uppercase", letterSpacing: 2, marginBottom: 10 }}>Ключевые слова</div>
               {parsed.keyWords.map((kw, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <span style={{ color: "#ff8c00", fontWeight: 700, fontSize: 13, minWidth: 100 }}>{kw.word}</span>
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                  <span style={{ color: "#ff8c00", fontWeight: 700, fontSize: 13, minWidth: 120 }}>{kw.word}</span>
                   <span style={{ color: "#666", fontSize: 12 }}>{kw.translation}</span>
-                  {(() => {
-                    const added = addedWords.includes(kw.word) || isInDeck(kw.word);
-                    return added ? (
-                      <span style={{ color: "#555", fontSize: 10, marginLeft: "auto" }}>✓ в словаре</span>
-                    ) : (
-                      <button onClick={() => addToCards(kw.word, kw.translation)} style={{ marginLeft: "auto", background: "#00ff8810", border: "1px solid #00ff8820", borderRadius: 6, padding: "3px 10px", color: "#00cc66", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
-                        + в словарь
-                      </button>
-                    );
-                  })()}
                 </div>
               ))}
             </div>
@@ -1282,45 +1288,7 @@ KEY WORDS: [3-4 words: word — перевод]`;
               <div style={{ color: "#bbb", fontSize: 13, lineHeight: 1.9, whiteSpace: "pre-wrap" }}>{feedback}</div>
 
               {/* Add new words to deck */}
-              {(() => {
-                const newWords = [];
-                const lines = feedback.split("\n");
-                let inNewWords = false;
-                lines.forEach(line => {
-                  if (line.includes("💡") && line.includes("СЛОВА")) { inNewWords = true; return; }
-                  if (line.includes("✅") || line.includes("🔧") || line.includes("📝") || line.trim() === "") { if (inNewWords && line.trim() !== "") inNewWords = false; }
-                  if (inNewWords && line.includes("—")) {
-                    const parts = line.split("—").map(s => s.trim().replace(/^[\d.\-\*\s]+/, ""));
-                    if (parts[0] && parts[0].length > 1 && parts[0].length < 50) {
-                      newWords.push({ word: parts[0], translation: parts[1] || "" });
-                    }
-                  }
-                });
-                if (!newWords.length) return null;
-                return (
-                  <div style={{ marginTop: 14, borderTop: "1px solid #ffffff10", paddingTop: 14 }}>
-                    <div style={{ color: "#555", fontSize: 10, textTransform: "uppercase", letterSpacing: 2, marginBottom: 10 }}>Сохранить новые слова:</div>
-                    {newWords.map((w, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "#0d1117", border: "1px solid #ffffff08", borderRadius: 10, padding: "8px 12px", marginBottom: 6 }}>
-                        <div style={{ flex: 1 }}>
-                          <span style={{ color: "#ff8c00", fontWeight: 700, fontSize: 13 }}>{w.word}</span>
-                          {w.translation && <span style={{ color: "#666", fontSize: 12, marginLeft: 8 }}>{w.translation}</span>}
-                        </div>
-                        {(() => {
-                          const added = addedWords.includes(w.word) || isInDeck(w.word);
-                          return added ? (
-                            <span style={{ color: "#555", fontSize: 11 }}>✓ в словаре</span>
-                          ) : (
-                            <button onClick={() => addToCards(w.word, w.translation)} style={{ background: "#00ff8810", border: "1px solid #00ff8820", borderRadius: 8, padding: "4px 12px", color: "#00cc66", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                              + в словарь
-                            </button>
-                          );
-                        })()}
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
+
             </div>
           )}
         </>
@@ -1341,6 +1309,8 @@ function PhraseHuntModule({ studiedCards }) {
   const [finished, setFinished] = useState(false);
   const [totalScore, setTotalScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
+  const [hintWord, setHintWord] = useState(null);
+  const [activePhrase, setActivePhrase] = useState(null);
 
   const wordsToUse = studiedCards && studiedCards.length >= 4 ? studiedCards : FREQ_WORDS.slice(0, 10);
 
@@ -1350,6 +1320,8 @@ function PhraseHuntModule({ studiedCards }) {
     setFound([]);
     setFinished(false);
     setShowResult(false);
+    setHintWord(null);
+    setActivePhrase(null);
 
     const phraseList = wordsToUse.map(w => `"${w.word}"`).join(", ");
     const sys = `You are writing a short English text for a language learning game.
@@ -1400,20 +1372,28 @@ Output ONLY the paragraph text, nothing else.`;
   const tokens = huntText ? tokenize(huntText) : [];
 
   const handleClick = (token) => {
-    if (finished || !token.phrase) return;
+    if (!token.phrase) return;
     const word = token.phrase.word;
-    if (found.includes(word)) return;
+    // If already found — show translation on click
+    if (found.includes(word)) {
+      setActivePhrase(prev => prev?.word === word ? null : token.phrase);
+      speakText(word, 0.85);
+      return;
+    }
+    if (finished) return;
     const newFound = [...found, word];
     setFound(newFound);
+    setActivePhrase(token.phrase);
     speakText(word, 0.85);
     // Compare against actual tokens that have phrases (not hiddenPhrases array)
     const uniquePhrasesInText = [...new Set(
       tokens.filter(t => t.phrase).map(t => t.phrase.word)
     )];
     if (newFound.length >= uniquePhrasesInText.length) {
-      setTotalScore(prev => prev + newFound.length);
+      setTotalScore(prev => prev + uniquePhrasesInText.length);
       setFinished(true);
       setShowResult(true);
+      setHintWord(null);
     }
   };
 
@@ -1817,4 +1797,3 @@ export default function App() {
     </div>
   );
 }
-
