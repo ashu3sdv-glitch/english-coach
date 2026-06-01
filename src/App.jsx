@@ -1054,21 +1054,7 @@ function DiaryModule() {
     if (!text.trim() || text.trim().length < 10) return;
     setLoading(true); setFeedback(null);
     try {
-      const sys = `You are a friendly English teacher correcting a Russian learner's diary entry.
-Respond in this EXACT format:
-
-ОБЩАЯ ОЦЕНКА
-[2-3 sentences in Russian praising what is good]
-
-ИСПРАВЛЕНИЯ
-[Each correction: WRONG: original text CORRECT: fixed text RU: Russian translation]
-If no errors write: Oshibok net!
-
-УЛУЧШЕНИЯ СТИЛЯ
-[2-3 suggestions in Russian with examples]
-
-ИСПРАВЛЕННЫЙ ТЕКСТ
-[Full corrected version]`;
+      const sys = "You are a friendly English teacher correcting a Russian learner diary entry.\nRespond in this EXACT format:\n\n\u2705 ОБЩАЯ ОЦЕНКА\n[2-3 sentences in Russian praising what is good]\n\n\ud83d\udd27 ИСПРАВЛЕНИЯ\n[Each error on its own line: \u274c wrong phrase \u2192 \u2705 corrected phrase (brief Russian explanation)]\nIf no errors write: \u041e\u0448\u0438\u0431\u043e\u043a \u043d\u0435\u0442!\n\n\ud83d\udcac УЛУЧШЕНИЯ СТИЛЯ\n[2-3 suggestions in Russian with examples]\n\n\ud83d\udcdd ИСПРАВЛЕННЫЙ ТЕКСТ\n[Full corrected version]";
       const reply = await callClaude([{ role: "user", content: text }], sys);
       if (reply && reply.length > 10) {
         save({ date: new Date().toLocaleDateString("ru-RU"), text, feedback: reply });
