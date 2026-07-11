@@ -87,6 +87,67 @@ const SCENARIOS = [
   { id: "story", label: "Storytelling", icon: "📖", prompt: "Let's do a collaborative story. Start a short story and I'll continue it. We alternate. Gently correct my grammar. Keep it fun." },
 ];
 
+const HINT_LEVELS = [
+  { id: 1, label: "Уровень 1", desc: "Подсказка на русском видна всегда", icon: "🟢", xpPerReply: 5 },
+  { id: 2, label: "Уровень 2", desc: "Подсказка скрыта, открывается по кнопке", icon: "🟡", xpPerReply: 8 },
+  { id: 3, label: "Уровень 3", desc: "Без подсказок — только английский", icon: "🔴", xpPerReply: 12 },
+];
+
+const RANKS = [
+  { min: 0, label: "Новичок", icon: "🌱" },
+  { min: 50, label: "Ученик", icon: "📘" },
+  { min: 150, label: "Практик", icon: "💪" },
+  { min: 350, label: "Уверенный", icon: "🔥" },
+  { min: 700, label: "Продвинутый", icon: "🚀" },
+  { min: 1500, label: "Мастер", icon: "👑" },
+];
+
+function getRankInfo(xp) {
+  let idx = 0;
+  for (let i = 0; i < RANKS.length; i++) if (xp >= RANKS[i].min) idx = i;
+  const current = RANKS[idx];
+  const next = RANKS[idx + 1] || null;
+  const span = next ? next.min - current.min : 1;
+  const progress = next ? Math.min(1, (xp - current.min) / span) : 1;
+  return { current, next, progress };
+}
+
+function useChatXp() {
+  const [xp, setXp] = useState(() => {
+    try {
+      const s = localStorage.getItem("chatXp");
+      return s ? Number(s) : 0;
+    } catch { return 0; }
+  });
+  const addXp = useCallback((amount) => {
+    setXp((prev) => {
+      const next = prev + amount;
+      try { localStorage.setItem("chatXp", String(next)); } catch {}
+      return next;
+    });
+  }, []);
+  return { xp, addXp };
+}
+
+function parseAssistantReply(raw) {
+  if (!raw) return { en: "", ru: "", correction: "" };
+  const lines = raw.split("\n");
+  const enLines = [];
+  let ru = "";
+  let correction = "";
+  let mode = "en";
+  for (const line of lines) {
+    const ruMatch = line.match(/^\s*RU:\s?(.*)$/i);
+    const corrMatch = line.match(/^\s*(?:💬\s*)?CORRECTION:\s?(.*)$/i);
+    if (ruMatch) { ru = (ru ? ru + " " : "") + ruMatch[1].trim(); mode = "ru"; continue; }
+    if (corrMatch) { correction = (correction ? correction + " " : "") + corrMatch[1].trim(); mode = "correction"; continue; }
+    if (mode === "ru" && line.trim()) { ru += " " + line.trim(); continue; }
+    if (mode === "correction" && line.trim()) { correction += " " + line.trim(); continue; }
+    if (mode === "en") enLines.push(line);
+  }
+  return { en: enLines.join("\n").trim(), ru: ru.trim(), correction: correction.trim() };
+}
+
 const READING_TOPICS = [
   { id: "music", label: "AI Music", icon: "🎵" },
   { id: "travel", label: "Путешествие", icon: "✈️" },
@@ -173,6 +234,8 @@ function updateCard(card, quality) {
 
 function todayKey() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
 function getNewPerDay() { try { return parseInt(localStorage.getItem("new_per_day") || "3"); } catch { return 3; } }
+const MAX_AI_PHRASES = 12;
+const MAX_CHAT_HISTORY = 12;
 
 function useSRS() {
   const [cards, setCards] = useState(() => {
@@ -240,13 +303,15 @@ function useMotivation() {
 // ─── API ─────────────────────────────────────────────────────────────────────
 
 async function callClaude(messages, system) {
-  const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages, system }) });
+  const recentMessages = messages.length > MAX_CHAT_HISTORY ? messages.slice(-MAX_CHAT_HISTORY) : messages;
+  const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: recentMessages, system }) });
   const data = await res.json();
   return data.reply || "Sorry, something went wrong.";
 }
 
 async function generateStory(phrases, topic) {
-  const res = await fetch("/api/story", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phrases, topic }) });
+  const compactPhrases = (phrases || []).slice(-MAX_AI_PHRASES).map(({ word }) => ({ word }));
+  const res = await fetch("/api/story", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phrases: compactPhrases, topic }) });
   const data = await res.json();
   return data.story || "";
 }
@@ -594,7 +659,7 @@ function QuizModule({ studiedCards }) {
         // Repeat same question with reshuffled options until correct
         setQuestion(prev => ({
           ...prev,
-          options: prev.options.sort(() => Math.random() - 0.5)
+          options: shuffleArr(prev.options)
         }));
         if (mode === "timed") startTimer();
       }, 1200);
@@ -715,7 +780,7 @@ function BuilderModule({ studiedCards }) {
   const [generatedSentences, setGeneratedSentences] = useState([]);
   const [queue, setQueue] = useState([]);
 
-  const wordsToUse = studiedCards && studiedCards.length >= 4 ? studiedCards : FREQ_WORDS.slice(0, 10);
+  const wordsToUse = studiedCards && studiedCards.length >= 4 ? studiedCards.slice(-MAX_AI_PHRASES) : FREQ_WORDS.slice(0, 10);
 
   const generateSentences = async () => {
     setLoading(true);
@@ -1299,6 +1364,7 @@ function PhraseHuntModule({ studiedCards }) {
   const [activePhrase, setActivePhrase] = useState(null);
 
   const wordsToUse = studiedCards && studiedCards.length >= 4 ? studiedCards : FREQ_WORDS.slice(0, 10);
+  const requestWords = wordsToUse.slice(-MAX_AI_PHRASES);
 
   const generateHuntText = async () => {
     setLoading(true);
@@ -1309,7 +1375,7 @@ function PhraseHuntModule({ studiedCards }) {
     setHintWord(null);
     setActivePhrase(null);
 
-    const phraseList = wordsToUse.map(w => `"${w.word}"`).join(", ");
+    const phraseList = requestWords.map(w => `"${w.word}"`).join(", ");
     const sys = `You are writing a short English text for a language learning game.
 Write a natural paragraph (5-6 sentences, B1 level) that includes AT LEAST 5 of these exact phrases: ${phraseList}
 Use the phrases EXACTLY as written.
@@ -1324,7 +1390,7 @@ Output ONLY the paragraph text, nothing else.`;
   useEffect(() => { generateHuntText(); }, []);
 
   const hiddenPhrases = huntText
-    ? wordsToUse.filter(w => huntText.toLowerCase().includes(w.word.toLowerCase()))
+    ? requestWords.filter(w => huntText.toLowerCase().includes(w.word.toLowerCase()))
     : [];
 
   const tokenize = (text) => {
@@ -1522,28 +1588,118 @@ function ChatModule() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [level, setLevel] = useState(() => {
+    try {
+      const s = localStorage.getItem("chatHintLevel");
+      return s ? Number(s) : 1;
+    } catch { return 1; }
+  });
+  const [revealedHints, setRevealedHints] = useState(() => new Set());
+  const { xp, addXp } = useChatXp();
+  const [xpGain, setXpGain] = useState(null);
   const bottomRef = useRef(null);
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
+
+  const changeLevel = (id) => {
+    setLevel(id);
+    try { localStorage.setItem("chatHintLevel", String(id)); } catch {}
+  };
+
+  const toggleHint = (i) => {
+    setRevealedHints((prev) => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+  };
 
   const startScenario = async (sc) => {
-    setScenario(sc); setMessages([]); setLoading(true);
-    const sys = `You are an English language tutor helping a Russian-speaking adult learner. ${sc.prompt}\nRules:\n- Speak ONLY in English\n- After user responds add "💬 Correction:" if they made mistakes\n- Keep messages concise (2-4 sentences)\n- Be encouraging\n- Start immediately`;
+    setScenario(sc);
+    setMessages([]);
+    setRevealedHints(new Set());
+    setLoading(true);
+    const sys = `You are an English language tutor helping a Russian-speaking adult learner. ${sc.prompt}
+
+Rules:
+- Speak ONLY in English in the main message
+- Keep your messages concise (2-4 sentences max)
+- Be encouraging and warm
+- Start the conversation immediately
+
+MANDATORY FORMAT — after every single message you send, on a new line add:
+RU: <short natural Russian translation of your message, so a learner instantly understands what you asked>
+Keep the RU line itself in Russian only, one line.
+If, and only if, the user's PREVIOUS reply had a grammar or vocabulary mistake, also add one more line:
+CORRECTION: <brief fix, mixing English example + short Russian explanation>
+Do not add anything after the RU/CORRECTION lines. Never skip the RU line.`;
     const reply = await callClaude([], sys);
-    setMessages([{ role: "assistant", content: reply, sys }]); setLoading(false);
+    setMessages([{ role: "assistant", content: reply, sys }]);
+    setLoading(false);
   };
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
     const userMsg = { role: "user", content: input };
     const history = [...messages, userMsg];
-    setMessages(history); setInput(""); setLoading(true);
+    setMessages(history);
+    setInput("");
+    setLoading(true);
     const sys = messages[0]?.sys || "";
     const reply = await callClaude(history.map(m => ({ role: m.role, content: m.content })), sys);
-    setMessages([...history, { role: "assistant", content: reply }]); setLoading(false);
+    setMessages([...history, { role: "assistant", content: reply }]);
+    setLoading(false);
+    const gained = HINT_LEVELS.find((l) => l.id === level)?.xpPerReply || 5;
+    addXp(gained);
+    setXpGain(gained);
+    setTimeout(() => setXpGain(null), 1600);
+  };
+
+  const LevelPicker = ({ compact }) => (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: compact ? 0 : 16 }}>
+      {HINT_LEVELS.map((lv) => (
+        <button key={lv.id} onClick={() => changeLevel(lv.id)}
+          title={lv.desc}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            background: level === lv.id ? "linear-gradient(135deg,#1a3a2a,#0d2a1a)" : "#0d1117",
+            border: level === lv.id ? "1px solid #00ff8860" : "1px solid #ffffff15",
+            borderRadius: 10, padding: compact ? "5px 10px" : "8px 12px",
+            color: level === lv.id ? "#00ff88" : "#888", fontSize: compact ? 12 : 13,
+            fontWeight: level === lv.id ? 700 : 500, cursor: "pointer",
+          }}>
+          <span>{lv.icon}</span>
+          <span>{lv.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+
+  const XpBar = () => {
+    const { current, next, progress } = getRankInfo(xp);
+    return (
+      <div style={{ position: "relative", background: "#0d1117", border: "1px solid #ffffff15", borderRadius: 12, padding: "10px 14px", marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+          <div style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>{current.icon} {current.label}</div>
+          <div style={{ color: "#888", fontSize: 12 }}>{xp} XP{next ? ` · до ${next.icon} ${next.label}: ${next.min - xp} XP` : " · максимум"}</div>
+        </div>
+        <div style={{ height: 6, background: "#161b22", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${progress * 100}%`, background: "linear-gradient(90deg,#00cc66,#00ff88)", transition: "width 0.4s ease" }} />
+        </div>
+        {xpGain != null && (
+          <div style={{ position: "absolute", right: 14, top: -10, color: "#00ff88", fontSize: 13, fontWeight: 700 }}>
+            +{xpGain} XP
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (!scenario) return (
     <div>
+      <XpBar />
+      <div style={{ color: "#888", fontSize: 13, marginBottom: 8 }}>Уровень подсказки:</div>
+      <LevelPicker />
+      <div style={{ color: "#555", fontSize: 12, marginBottom: 16 }}>{HINT_LEVELS.find((l) => l.id === level)?.desc} · {HINT_LEVELS.find((l) => l.id === level)?.xpPerReply} XP за реплику</div>
       <div style={{ color: "#888", fontSize: 13, marginBottom: 14 }}>Выбери сценарий для практики:</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         {SCENARIOS.map(sc => (
@@ -1559,18 +1715,59 @@ function ChatModule() {
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: 460 }}>
+    <div style={{ display: "flex", flexDirection: "column", height: 520 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, paddingBottom: 10, borderBottom: "1px solid #ffffff10" }}>
         <span style={{ fontSize: 18 }}>{scenario.icon}</span>
         <span style={{ color: "#fff", fontWeight: 700 }}>{scenario.label}</span>
         <button onClick={() => setScenario(null)} style={{ marginLeft: "auto", background: "none", border: "1px solid #333", color: "#888", borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontSize: 12 }}>← сценарии</button>
       </div>
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
-        {messages.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
-            <div style={{ maxWidth: "82%", padding: "10px 14px", borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: m.role === "user" ? "linear-gradient(135deg,#1a3a2a,#0d2a1a)" : "#161b22", border: m.role === "user" ? "1px solid #00ff8830" : "1px solid #ffffff10", color: "#e0e0e0", fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{m.content}</div>
-          </div>
-        ))}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <div style={{ color: "#888", fontSize: 12 }}>{getRankInfo(xp).current.icon} {getRankInfo(xp).current.label} · {xp} XP</div>
+        {xpGain != null && <div style={{ color: "#00ff88", fontSize: 12, fontWeight: 700 }}>+{xpGain} XP</div>}
+      </div>
+      <div style={{ marginBottom: 10 }}><LevelPicker compact /></div>
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10, paddingRight: 4 }}>
+        {messages.map((m, i) => {
+          if (m.role === "user") {
+            return (
+              <div key={i} style={{ display: "flex", justifyContent: "flex-end" }}>
+                <div style={{ maxWidth: "82%", padding: "10px 14px", borderRadius: "16px 16px 4px 16px", background: "linear-gradient(135deg,#1a3a2a,#0d2a1a)", border: "1px solid #00ff8830", color: "#e0e0e0", fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{m.content}</div>
+              </div>
+            );
+          }
+          const parsed = parseAssistantReply(m.content);
+          const showRuAlways = level === 1;
+          const showRuToggle = level === 2 && !!parsed.ru;
+          const isRevealed = revealedHints.has(i);
+          return (
+            <div key={i} style={{ display: "flex", justifyContent: "flex-start" }}>
+              <div style={{ maxWidth: "82%", padding: "10px 14px", borderRadius: "16px 16px 16px 4px", background: "#161b22", border: "1px solid #ffffff10", color: "#e0e0e0", fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                <div>{parsed.en || m.content}</div>
+                {parsed.ru && showRuAlways && (
+                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #ffffff10", color: "#00ff88", fontSize: 13, fontStyle: "italic" }}>
+                    🇷🇺 {parsed.ru}
+                  </div>
+                )}
+                {showRuToggle && (
+                  isRevealed ? (
+                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #ffffff10", color: "#00ff88", fontSize: 13, fontStyle: "italic" }}>
+                      🇷🇺 {parsed.ru}
+                    </div>
+                  ) : (
+                    <button onClick={() => toggleHint(i)} style={{ marginTop: 8, background: "none", border: "1px dashed #ffffff30", color: "#888", borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontSize: 12 }}>
+                      🇷🇺 Показать подсказку
+                    </button>
+                  )
+                )}
+                {parsed.correction && (
+                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #ffffff10", color: "#ffcc66", fontSize: 13 }}>
+                    💬 {parsed.correction}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
         {loading && <div style={{ display: "flex" }}><div style={{ background: "#161b22", border: "1px solid #ffffff10", borderRadius: "16px 16px 16px 4px", padding: "10px 18px", color: "#555" }}>···</div></div>}
         <div ref={bottomRef} />
       </div>
