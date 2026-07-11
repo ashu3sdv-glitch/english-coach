@@ -12,7 +12,7 @@ export default async function handler(req, res) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-5",
         max_tokens: 1000,
         system,
         messages,
@@ -20,6 +20,10 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+    if (data.error) {
+      console.error("Anthropic API error:", data.error);
+      return res.status(200).json({ reply: "Sorry, something went wrong.", error: data.error.message });
+    }
     const reply = data.content?.[0]?.text || "Sorry, something went wrong.";
     res.status(200).json({ reply });
   } catch (err) {
