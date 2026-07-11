@@ -23,7 +23,7 @@ CRITICAL RULES:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-5",
         max_tokens: 600,
         system,
         messages: [{ role: "user", content: "Write the story now." }],
@@ -31,6 +31,10 @@ CRITICAL RULES:
     });
 
     const data = await response.json();
+    if (data.error) {
+      console.error("Anthropic API error:", data.error);
+      return res.status(200).json({ story: "", error: data.error.message });
+    }
     const story = data.content?.[0]?.text?.trim() || "";
     res.status(200).json({ story });
   } catch (err) {
