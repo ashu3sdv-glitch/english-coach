@@ -1196,9 +1196,9 @@ function DiaryModule() {
                 <div style={{ color: "#555", fontSize: 10, textTransform: "uppercase", letterSpacing: 2, marginBottom: 10 }}>Добавить в словарь:</div>
                 {corrections.map((c, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "#0d1117", border: "1px solid #ffffff08", borderRadius: 10, padding: "8px 12px", marginBottom: 6 }}>
-                    <span style={{ color: "#00ff88", fontSize: 13, flex: 1 }}>{c}</span>
-                    <button onClick={() => addToCards(c)} disabled={addedPhrases.includes(c)} style={{ background: addedPhrases.includes(c) ? "#003300" : "#00ff8820", border: `1px solid ${addedPhrases.includes(c) ? "#00ff8860" : "#00ff8840"}`, borderRadius: 8, padding: "4px 12px", color: addedPhrases.includes(c) ? "#00ff88" : "#00cc66", fontSize: 11, fontWeight: 700, cursor: addedPhrases.includes(c) ? "default" : "pointer" }}>
-                      {addedPhrases.includes(c) ? "✓ Добавлено" : "+ В словарь"}
+                    <span style={{ color: "#00ff88", fontSize: 13, flex: 1 }}>{c.phrase}</span>
+                    <button onClick={() => addToCards(c.phrase, c.translation)} disabled={addedPhrases.includes(c.phrase)} style={{ background: addedPhrases.includes(c.phrase) ? "#003300" : "#00ff8820", border: `1px solid ${addedPhrases.includes(c.phrase) ? "#00ff8860" : "#00ff8840"}`, borderRadius: 8, padding: "4px 12px", color: addedPhrases.includes(c.phrase) ? "#00ff88" : "#00cc66", fontSize: 11, fontWeight: 700, cursor: addedPhrases.includes(c.phrase) ? "default" : "pointer" }}>
+                      {addedPhrases.includes(c.phrase) ? "✓ Добавлено" : "+ В словарь"}
                     </button>
                   </div>
                 ))}
