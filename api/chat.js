@@ -24,7 +24,12 @@ export default async function handler(req, res) {
       console.error("Anthropic API error:", data.error);
       return res.status(200).json({ reply: "Sorry, something went wrong.", error: data.error.message });
     }
-    const reply = data.content?.[0]?.text || "Sorry, something went wrong.";
+    const textBlock = Array.isArray(data.content) ? data.content.find((b) => b.type === "text") : null;
+    const reply = textBlock?.text || "";
+    if (!reply) {
+      // Temporary diagnostics: surface the raw API response so we can see why it's empty.
+      return res.status(200).json({ reply: "Sorry, something went wrong.", debug: JSON.stringify(data).slice(0, 800) });
+    }
     res.status(200).json({ reply });
   } catch (err) {
     console.error(err);
