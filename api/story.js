@@ -35,7 +35,12 @@ CRITICAL RULES:
       console.error("Anthropic API error:", data.error);
       return res.status(200).json({ story: "", error: data.error.message });
     }
-    const story = data.content?.[0]?.text?.trim() || "";
+    const textBlock = Array.isArray(data.content) ? data.content.find((b) => b.type === "text") : null;
+    const story = textBlock?.text?.trim() || "";
+    if (!story) {
+      // Temporary diagnostics: surface the raw API response so we can see why it's empty.
+      return res.status(200).json({ story: "", debug: JSON.stringify(data).slice(0, 800) });
+    }
     res.status(200).json({ story });
   } catch (err) {
     console.error(err);
